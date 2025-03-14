@@ -1,0 +1,12 @@
+defaults:
+  - base_dataset
+
+dataset_type: digital_typhoon
+task: regression
+dataset_name: digital_typhoon
+num_classes: 1
+num_channels: 3 # dataset comes in sequences of 3, height, width by default
+data_path: ${oc.env:DATASETS_DIR}/DigitalTyphoon
+image_resolution: 224
+band_wavelengths: [11, 11, 11] # wavelength of around 11μm according to 3.3 of paper
+multilabel: false

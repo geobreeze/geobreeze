@@ -1,0 +1,56 @@
+name: tests
+on:
+  push:
+    branches:
+      - geofm
+      - release**
+  pull_request:
+    branches:
+      - geofm
+      - release**
+defaults:
+  run:
+    shell: bash
+jobs:
+  latest:
+    name: latest
+    runs-on: ${{ matrix.os }}
+    env:
+      MMCV_WITHOUT_EXT: "1"
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.10']
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4.2.2
+      - name: Set up python
+        id: setup-python
+        uses: actions/setup-python@v5.4.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Cache dependencies
+        uses: actions/cache@v4.2.0
+        id: cache
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ runner.os }}-${{ runner.arch }}-Python-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('requirements/required.txt', 'requirements/datasets.txt', 'requirements/tests.txt') }}
+        if: ${{ runner.os != 'macOS' }}
+      - name: Install pip dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        env:
+          MMCV_WITHOUT_EXT: "1"
+        run: |
+          pip install -U openmim
+          pip install torch==2.1.2
+          mim install mmengine
+          mim install mmcv==2.1.0 mmsegmentation==1.2.2
+          pip install -r requirements/required.txt -r requirements/tests.txt
+          pip cache purge
+      - name: List pip dependencies
+        run: pip list
+      - name: Run pytest checks
+        env:
+            MMCV_WITHOUT_EXT: "1"
+        run: |
+          pytest

@@ -1,0 +1,6 @@
+defaults:
+  - base_model_dofa
+
+task: classification
+full_finetune: false
+

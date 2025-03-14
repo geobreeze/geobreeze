@@ -1,0 +1,8 @@
+dataset_type: 'dummy'
+task: 'classification'
+num_classes: 7
+multilabel: False
+image_resolution: 224
+num_channels: 3
+data_path: null
+band_wavelengths: [0.1, 0.2, 0.3]
