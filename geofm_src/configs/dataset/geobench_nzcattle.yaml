@@ -1,0 +1,21 @@
+defaults:
+  - geobench
+
+benchmark_name: segmentation_v1.0
+dataset_name: m-nz-cattle
+task: segmentation
+band_names:
+  - "Red"
+  - "Green"
+  - "Blue"
+ #for drones
+wavelengths_mean_nm: [650, 560, 450]
+wavelengths_sigma_nm: [16, 16, 16]
+num_classes: 2
+multilabel: false
+num_channels: 3
+senpamae_channels: #senpamae SRF has only 10 channels (listed above), so indexes below are relative to that list
+  - 2
+  - 1
+  - 0
+senpamae_srf_name: rfs_sentinel2_a.npy

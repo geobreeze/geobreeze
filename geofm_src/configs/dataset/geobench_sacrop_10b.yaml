@@ -1,0 +1,10 @@
+defaults:
+  - geobench
+  - s2_10b
+
+benchmark_name: segmentation_v1.0
+dataset_name: m-SA-crop-type
+task: segmentation
+num_classes: 10
+multilabel: false
+num_channels: 3

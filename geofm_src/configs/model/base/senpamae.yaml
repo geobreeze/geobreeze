@@ -1,0 +1,10 @@
+model_type: senpamae
+embed_dim: 768
+image_resolution: 144
+
+pretrained_path: ${oc.env:MODEL_WEIGHTS_DIR}/senpamae_doubleParameterEmbedding.pt
+
+segm_blk_indices: [4,6,10,11]
+accel_cls_blk_indices: [8, 9, 10, 11]
+default_cls_blk_indices: [11]
+default_feat_out_dim: 768

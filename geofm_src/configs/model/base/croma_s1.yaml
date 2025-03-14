@@ -1,0 +1,12 @@
+model_type: croma
+image_resolution: 120
+
+size: base
+modality: SAR # 2 channel input
+pretrained_path: ${oc.env:MODEL_WEIGHTS_DIR}/CROMA_base.pt
+embed_dim: 768
+
+segm_blk_indices: [2,4,5,6]
+accel_cls_blk_indices: [3,4,5,6]
+default_cls_blk_indices: [6]
+default_feat_out_dim: 768

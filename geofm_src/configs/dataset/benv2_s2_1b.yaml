@@ -1,0 +1,10 @@
+defaults:
+  - benv2_all
+  - s2_12b
+
+bands: s2
+dataset_name: benv2_s2
+band_ids: [7] #NIR
+num_channels: 1
+band_gsds: [10]
+senpamae_channels: [7]

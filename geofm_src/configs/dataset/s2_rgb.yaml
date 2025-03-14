@@ -1,0 +1,8 @@
+band_names:
+  - "04 - Red"
+  - "03 - Green"
+  - "02 - Blue"
+
+num_channels: 3
+wavelengths_mean_nm: [664, 559, 492]
+wavelengths_sigma_nm: [12, 13, 24]

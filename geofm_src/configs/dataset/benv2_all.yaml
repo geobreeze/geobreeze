@@ -1,0 +1,20 @@
+defaults:
+  - base_dataset
+
+dataset_type: benv2
+task: classification
+dataset_name: null #needs to be set in the lower config
+num_classes: 19
+num_channels: 14
+data_path: ${oc.env:DATASETS_DIR}/benv2
+image_resolution: 224  # Desired image size for model input
+multilabel: true
+bands: all  # Argument for torchgeo loader
+download: True
+band_gsds: [10, 10, 10, 10]
+senpamae_srf_name: rfs_sentinel2_a.npy
+senpamae_channels: null
+subset:
+  train: 0.1
+  val: 0.25
+  test: -1

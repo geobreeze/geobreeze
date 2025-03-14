@@ -1,0 +1,9 @@
+defaults:
+  - geobench_forestnet
+  - l8_6b
+
+num_channels: 6
+image_resolution: 224
+
+
+

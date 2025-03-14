@@ -1,0 +1,13 @@
+model_type: softcon
+
+image_resolution: 224
+num_channels: 13
+dinov2_torchhub_id: dinov2_vitb14
+embed_dim: 768
+
+pretrained_path: ${oc.env:MODEL_WEIGHTS_DIR}/B13_vitb14_softcon.pth
+
+segm_blk_indices: [4,6,10,11]
+accel_cls_blk_indices: [8, 9, 10, 11]
+default_cls_blk_indices: [11]
+default_feat_out_dim: 768

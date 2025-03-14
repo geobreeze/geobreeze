@@ -1,0 +1,11 @@
+defaults:
+  - geobench
+  - s2_12b
+
+benchmark_name: classification_v1.0
+dataset_name: m-eurosat
+task: classification
+num_classes: 10
+multilabel: false
+dataset_type: geobench
+image_resolution: 224

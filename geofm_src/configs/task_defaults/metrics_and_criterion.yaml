@@ -1,0 +1,93 @@
+classification:
+
+  criterion:
+    id: CrossEntropyLoss
+
+  train:
+  - id: MulticlassAccuracy
+    top_k: 1
+    average: micro
+
+  val:
+  - id: MulticlassAccuracy
+    top_k: 1
+    average: micro
+  - id: MulticlassAccuracy
+    top_k: 1
+    average: macro
+  - id: F1Score
+    average: micro
+  - id: F1Score
+    average: macro
+
+  ckpt_monitor: acc_top-1_micro
+  ckpt_monitor_higher_is_better: true
+
+multilabel_classification:
+
+  criterion:
+    id: MultiLabelSoftMarginLoss
+
+  train:
+  - id: MultiLabelAveragePrecision
+    average: micro
+
+  val:
+  - id: MultiLabelAveragePrecision
+    average: micro
+  - id: MultiLabelAveragePrecision
+    average: macro
+  - id: MultiLabelF1Score
+    average: micro
+  - id: MultiLabelF1Score
+    average: macro
+
+  ckpt_monitor: MulLabAvergPrec_micro
+  ckpt_monitor_higher_is_better: true
+
+knn:
+  val:
+  - id: MulticlassAccuracy
+    top_k: 1
+    average: micro
+  - id: MulticlassAccuracy
+    top_k: 1
+    average: macro
+  - id: F1Score
+    average: micro
+  - id: F1Score
+    average: macro
+
+regression: 
+
+  criterion:
+    id: MSELoss
+
+  train:
+  - id: MSE
+
+  val:
+  - id: MSE
+  - id: RMSE
+  - id: MAE
+
+  ckpt_monitor: MSE
+  ckpt_monitor_higher_is_better: false
+
+segmentation: 
+
+  criterion:
+    id: CrossEntropyLoss
+
+  train:
+  - id: JaccardIndex
+    average: micro
+  - id: F1Score
+    average: micro
+  val:
+  - id: JaccardIndex
+    average: micro
+  - id: F1Score
+    average: micro
+
+  ckpt_monitor: mIoU

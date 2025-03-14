@@ -1,0 +1,13 @@
+model_type: anysat
+embed_dim: 768
+image_resolution: 64
+
+anysat_torchhub_id: anysat
+
+segm_blk_indices: [2, 3, 4, 5]
+accel_cls_blk_indices: [5]
+default_cls_blk_indices: [5]
+
+input_key: l7
+# If image size=64x10m, eff_patch_size = 640/160 = 4 in one dim = 4*4 = 16 patches
+patch_size: 160 #in m. 

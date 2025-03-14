@@ -1,0 +1,6 @@
+task_id: regression
+
+bands:
+- id: himawari/B14
+- id: himawari/B14
+- id: himawari/B14

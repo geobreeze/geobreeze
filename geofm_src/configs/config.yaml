@@ -1,0 +1,25 @@
+defaults:
+- model: null
+- dataset: null
+- _self_
+
+
+weight_decay: 0.0001
+epochs: 30
+warmup_epochs: 0
+
+num_workers: -1
+pin_mem: true
+num_gpus: 1
+
+seed: 0
+output_dir: null
+output_dir_suffix: null
+resume: true
+logger: mlflow
+overwrite: false
+
+trainer: 
+  check_val_every_n_epoch: 1000
+task_kwargs: null
+add_defining_args: true

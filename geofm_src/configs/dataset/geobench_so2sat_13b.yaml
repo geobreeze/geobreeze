@@ -1,0 +1,11 @@
+defaults:
+  - geobench
+  - s2_13b
+
+#zero padding to 13 channels
+num_channels: 13
+benchmark_name: classification_v1.0
+dataset_name: m-so2sat
+task: classification
+num_classes: 17
+multilabel: false

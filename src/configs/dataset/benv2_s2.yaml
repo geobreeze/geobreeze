@@ -1,6 +1,0 @@
-defaults:
-  - benv2_all
-
-bands: s2
-num_channels: 12
-

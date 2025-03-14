@@ -1,0 +1,12 @@
+defaults:
+  - base_dataset
+
+dataset_type: hyperview
+task: regression
+dataset_name: hyperview #for band_ids
+num_classes: 4
+num_channels: 21
+data_path: ${oc.env:DATASETS_DIR}/hyperview
+image_resolution: 224
+band_ids: [6, 10, 18, 27, 30, 39, 46, 55, 57, 65, 76, 79, 86, 95, 101, 107, 117, 123, 127, 136, 145, 148] #random selection from 21 bins
+full_spectra: true # for wavelengths_mean_nm and wavelengths_sigma_nm

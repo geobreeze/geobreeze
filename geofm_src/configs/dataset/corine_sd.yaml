@@ -1,0 +1,22 @@
+defaults:
+  - base_dataset
+
+dataset_type: corine
+task: classification
+dataset_name: spectral_earth # for band_ids
+num_classes: 19
+num_channels: 8
+data_path: ${oc.env:DATASETS_DIR}/spectral_earth
+image_resolution: 128
+multilabel: true
+
+# Target dataset
+target_dataset_name: dummy-superdove
+
+band_ids: [0, 1, 2, 3, 4, 5, 6, 7] # to subset the SD 8 bands
+senpamae_srf_name: rfs_superdove.npy
+
+subset:
+ train: 0.1
+ val: -1
+ test: -1

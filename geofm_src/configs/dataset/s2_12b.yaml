@@ -1,0 +1,31 @@
+band_names:
+  - "01 - Coastal aerosol"
+  - "02 - Blue"
+  - "03 - Green"
+  - "04 - Red"
+  - "05 - Vegetation Red Edge"
+  - "06 - Vegetation Red Edge"
+  - "07 - Vegetation Red Edge"
+  - "08 - NIR"
+  - "08A - Vegetation Red Edge"
+  - "09 - Water vapour"
+  - "11 - SWIR"
+  - "12 - SWIR"
+num_channels: 12
+wavelengths_mean_nm: [442, 492, 559, 664, 741, 739, 782, 827, 864, 945, 1613, 2203]
+wavelengths_sigma_nm: [7, 24, 13, 12, 5, 5, 7, 37, 8, 8, 34, 64]
+band_gsds: [60, 10, 10, 10, 20, 20, 20, 10, 20, 60, 20, 20]
+senpamae_channels:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 11
+  - 12
+senpamae_srf_name: rfs_sentinel2_a_13b.npy

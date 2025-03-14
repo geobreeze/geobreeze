@@ -1,0 +1,6 @@
+defaults:
+  - benv2_all
+  - s2_12b
+bands: s2
+dataset_name: benv2_s2
+num_channels: 12

@@ -1,0 +1,17 @@
+defaults:
+  - base_dataset
+
+dataset_type: tropical_cyclone
+task: regression
+dataset_name: tropical_cyclone # for band_ids
+num_classes: 1
+band_ids: [0] #, 1, 2] #all 3 channels are the same
+data_path: ${oc.env:DATASETS_DIR}/TropicalCyclone
+image_resolution: 224
+multilabel: false
+num_channels: 1
+
+subset:
+  train: 0.1
+  val: 0.2
+  test: -1

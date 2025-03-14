@@ -1,0 +1,13 @@
+defaults:
+  - geobench
+  - s2_12b
+
+#zero padding to 13 channels
+num_channels: 13
+benchmark_name: segmentation_v1.0
+dataset_name: m-SA-crop-type
+task: segmentation
+num_classes: 10
+multilabel: false
+
+

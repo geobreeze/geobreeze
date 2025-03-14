@@ -1,0 +1,24 @@
+defaults:
+  - base_dataset
+
+dataset_type: fmow
+task: classification
+dataset_name: fmow_rgb #for band_ids
+num_classes: 62
+num_channels: 3
+keep_sensors: ['WORLDVIEW02', 'WORLDVIEW03_VNIR','QUICKBIRD02', 'GEOEYE01']
+data_path: ${oc.env:DATASETS_DIR}
+image_resolution: 224
+multilabel: false
+return_rgb: true
+
+band_gsds: [0.3, 0.3, 0.3]
+senpamae_channels: #senpamae SRF has only 10 channels (listed above), so indexes below are relative to that list
+  - 3
+  - 2
+  - 1
+senpamae_srf_name: rfs_sentinel2_a.npy
+subset:
+  train: 0.1
+  val: 0.1
+  test: -1
