@@ -79,3 +79,9 @@ python geofm_src/main.py \
    +optim=sgd \
    seed=21 \
 ```
+
+## Attribution
+
+This codebase originated from a fork network. To give geobreeze a well-defined and fresh start, we opted to not include the full commit history. To give attribution, we highlight important prior milestones in our initial commits:
+- [fm-playground](https://github.com/ando-shah/fm-playground/tree/ecfa7b8c04f28f62ec01a4f7fe8ff8be8c5f53a5) as 2nd commit of geobreeze, minor changes to save storage: deleted `DOFA-pytorch/src/foundation_models/modules` and `DOFA-pytorch/src/foundation_models/SatMAE`
+- [DOFA-pytorch](https://github.com/xiong-zhitong/DOFA-pytorch/tree/b915a2f6d2983c04fd08a270a09e5032e9eb91a9) as 1st commit of geobreeze, minor changes to save storage: deleted `DOFA-pytorch/src/foundation_models/modules` and `DOFA-pytorch/src/foundation_models/SatMAE`
