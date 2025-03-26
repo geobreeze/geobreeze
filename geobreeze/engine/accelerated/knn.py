@@ -20,7 +20,7 @@ from .utils.data import SamplerType, make_data_loader
 from .utils.metrics import build_metric
 from .utils.utils import evaluate, extract_features
 import torch.distributed as dist
-from geofm_src.engine.model import EvalModelWrapper
+from geobreeze.engine.model import EvalModelWrapper
 
 logger = logging.getLogger("dinov2")
 

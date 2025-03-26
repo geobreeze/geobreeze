@@ -3,7 +3,7 @@ import torch
 import os
 
 from torchvision.datasets.utils import download_url
-from geofm_src.engine.model import EvalModelWrapper
+from geobreeze.engine.model import EvalModelWrapper
 
 from einops import rearrange
 

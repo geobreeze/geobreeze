@@ -1,17 +1,17 @@
 """Factory utily functions to create datasets and models."""
 
-import geofm_src.foundation_models as models
-from geofm_src.datasets.geobench_wrapper import GeoBenchDataset
-from geofm_src.datasets.resisc_wrapper import Resics45Dataset
-from geofm_src.datasets.benv2_wrapper import BenV2Dataset
-from geofm_src.datasets.spectral_earth_wrapper import CorineDataset
-from geofm_src.datasets.digital_typhoon_wrapper import DigitalTyphoonDataset
-from geofm_src.datasets.tropical_cyclone_wrapper import TropicalCycloneDataset
-from geofm_src.datasets.hyperview_wrapper import HyperviewDataset
-from geofm_src.datasets.dummy_dataset import DummyWrapper
-from geofm_src.engine.model import EvalModelWrapper
-from geofm_src.datasets.fmow_wrapper import FmowDataset
-from geofm_src.datasets.spacenet1_wrapper import SpaceNet1Dataset
+import geobreeze.foundation_models as models
+from geobreeze.datasets.geobench_wrapper import GeoBenchDataset
+from geobreeze.datasets.resisc_wrapper import Resics45Dataset
+from geobreeze.datasets.benv2_wrapper import BenV2Dataset
+from geobreeze.datasets.spectral_earth_wrapper import CorineDataset
+from geobreeze.datasets.digital_typhoon_wrapper import DigitalTyphoonDataset
+from geobreeze.datasets.tropical_cyclone_wrapper import TropicalCycloneDataset
+from geobreeze.datasets.hyperview_wrapper import HyperviewDataset
+from geobreeze.datasets.dummy_dataset import DummyWrapper
+from geobreeze.engine.model import EvalModelWrapper
+from geobreeze.datasets.fmow_wrapper import FmowDataset
+from geobreeze.datasets.spacenet1_wrapper import SpaceNet1Dataset
 model_registry = {
     "croma": models.CromaWrapper,
     "dinov2": models.DinoV2Wrapper,

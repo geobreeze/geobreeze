@@ -21,7 +21,7 @@ from .utils.utils import evaluate, blocks_to_cls, remove_ddp_wrapper
 from .utils.data import make_data_loader, SamplerType
 from .utils.metrics import build_metric, build_criterion, build_optimizer
 from .utils import distributed
-from geofm_src.engine.model import EvalModelWrapper
+from geobreeze.engine.model import EvalModelWrapper
 
 import time
 import math

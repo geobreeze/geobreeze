@@ -1,5 +1,5 @@
 import torch
-from geofm_src.engine.model import EvalModelWrapper
+from geobreeze.engine.model import EvalModelWrapper
 
 
 class PanopticonWrapper(EvalModelWrapper):

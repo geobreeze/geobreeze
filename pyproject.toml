@@ -63,4 +63,4 @@ filterwarnings = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["geofm_src*"]
+include = ["geobreeze*"]

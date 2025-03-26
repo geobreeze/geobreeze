@@ -5,7 +5,7 @@ from .DOFA.models_dwv import vit_base_patch16 as vit_base_patch16_cls
 from .DOFA.models_dwv import vit_large_patch16 as vit_large_patch16_cls
 from torchvision.datasets.utils import download_url
 
-from geofm_src.engine.model import EvalModelWrapper
+from geobreeze.engine.model import EvalModelWrapper
 from einops import rearrange
 
 

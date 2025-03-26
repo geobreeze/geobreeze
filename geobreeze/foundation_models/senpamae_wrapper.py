@@ -5,7 +5,7 @@ from torchvision.datasets.utils import download_url
 from peft import LoraConfig, get_peft_model
 from .SenPaMAE.model import vit_base_patch16
 import numpy as np
-from geofm_src.engine.model import EvalModelWrapper
+from geobreeze.engine.model import EvalModelWrapper
 import logging
 
 logger = logging.getLogger()

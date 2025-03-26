@@ -1,5 +1,5 @@
 import torch
-from geofm_src.engine.model import EvalModelWrapper
+from geobreeze.engine.model import EvalModelWrapper
 from torch import nn
 from einops import rearrange
 from torch import Tensor

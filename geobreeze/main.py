@@ -14,11 +14,11 @@ from omegaconf import open_dict
 import hydra
 from omegaconf import DictConfig, OmegaConf
 import pandas as pd
-from geofm_src.engine.accelerated.utils.logger import setup_logger, plot_curves
+from geobreeze.engine.accelerated.utils.logger import setup_logger, plot_curves
 
-from geofm_src.engine.accelerated.linear import run_eval_linear
-from geofm_src.engine.accelerated.knn import eval_knn_with_model
-from geofm_src.engine.lightning_task import LightningClsRegTask, LightningSegmentationTask
+from geobreeze.engine.accelerated.linear import run_eval_linear
+from geobreeze.engine.accelerated.knn import eval_knn_with_model
+from geobreeze.engine.lightning_task import LightningClsRegTask, LightningSegmentationTask
 import logging
 import json
 
@@ -43,8 +43,8 @@ def print_trainable_parameters(model):
 def main(cfg: DictConfig):
     task = cfg.dataset.task
     training_mode = cfg.model.training_mode
-    os.environ['CDIR'] = os.path.join(os.environ['REPO_PATH'], 'geofm_src/configs/')
-    default_config_dir = os.path.join(os.environ['REPO_PATH'], 'geofm_src/configs/task_defaults/')
+    os.environ['CDIR'] = os.path.join(os.environ['REPO_PATH'], 'geobreeze/configs/')
+    default_config_dir = os.path.join(os.environ['REPO_PATH'], 'geobreeze/configs/task_defaults/')
 
     # assign engine
     if training_mode in ['linear_probe','knn']:

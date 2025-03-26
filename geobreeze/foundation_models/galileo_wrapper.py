@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 from torch import Tensor
 from einops import rearrange
-from geofm_src.foundation_models.galileo.util import construct_galileo_input, MaskedOutput
+from geobreeze.foundation_models.galileo.util import construct_galileo_input, MaskedOutput
 from .galileo.model import Encoder
 
 from typing import Any
@@ -10,7 +10,7 @@ from pathlib import Path
 from omegaconf import OmegaConf
 import os
 from torchvision.datasets.utils import download_url
-from geofm_src.engine.model import EvalModelWrapper
+from geobreeze.engine.model import EvalModelWrapper
 
 
 EXPECTED_CHANNELS = {

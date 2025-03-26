@@ -1,13 +1,13 @@
-from geofm_src.engine.lightning_task import LightningClsRegTask, LightningSegmentationTask
+from geobreeze.engine.lightning_task import LightningClsRegTask, LightningSegmentationTask
 from .CROMA.use_croma import PretrainedCROMA
 import torch
 from torch import Tensor
 import os
 from torchvision.datasets.utils import download_url
-from geofm_src.engine.base import LinearHead
+from geobreeze.engine.base import LinearHead
 from einops import rearrange
 
-from geofm_src.engine.model import EvalModelWrapper 
+from geobreeze.engine.model import EvalModelWrapper 
 
 
 class CromaWrapper(EvalModelWrapper):

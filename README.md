@@ -65,7 +65,7 @@ To run, e.g., linear probing on a model, execute
 ```bash
 export $(cat .env)
 
-python geofm_src/main.py \
+python geobreeze/main.py \
    model=base/panopticon \
    dataset=geobench_eurosat_13b \
    output_dir="${ODIR}/sanity_check/" \

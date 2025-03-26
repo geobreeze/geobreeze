@@ -2,14 +2,14 @@
 
 from lightning import LightningModule
 import torch
-from geofm_src.util.misc import resize, seg_metric
+from geobreeze.util.misc import resize, seg_metric
 import torch.nn as nn
 from .model import EvalModelWrapper
 from einops import rearrange 
 from .base import LinearHead
 from torch import Tensor
 
-from geofm_src.engine.accelerated.utils.metrics import build_metric, build_criterion
+from geobreeze.engine.accelerated.utils.metrics import build_metric, build_criterion
 
 try:
     from mmseg.models.necks import Feature2Pyramid

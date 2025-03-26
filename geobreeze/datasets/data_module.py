@@ -1,6 +1,6 @@
 from lightning import LightningDataModule
 import torch
-from geofm_src.factory import create_dataset
+from geobreeze.factory import create_dataset
 from torch.utils.data import Subset
 
 class BenchmarkDataModule(LightningDataModule):

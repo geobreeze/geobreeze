@@ -193,7 +193,7 @@ def load_ds_cfg(ds_name):
     """ load chn_props and metainfo of dataset from file structure"""
     
     root = os.environ.get('REPO_PATH', 'dinov2/configs/') # assumes current working directory in PanOpticOn/
-    root = os.path.join(root, 'geofm_src/configs/sensor') # get to <package_name>/configs/sensor
+    root = os.path.join(root, 'geobreeze/configs/sensor') # get to <package_name>/configs/sensor
 
     # get dataset
     dirs = [d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d)) and d != 'satellites']

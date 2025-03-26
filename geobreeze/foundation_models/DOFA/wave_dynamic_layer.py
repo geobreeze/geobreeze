@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from geofm_src.util.pos_embed import get_1d_sincos_pos_embed_from_grid_torch
+from geobreeze.util.pos_embed import get_1d_sincos_pos_embed_from_grid_torch
 import numpy as np
 
 

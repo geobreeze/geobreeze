@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch
 from torch import Tensor
 from einops import repeat, rearrange
-from geofm_src.engine.model import EvalModelWrapper
+from geobreeze.engine.model import EvalModelWrapper
 import logging
 logger = logging.getLogger()
 
