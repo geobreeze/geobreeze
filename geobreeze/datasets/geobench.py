@@ -33,7 +33,6 @@ class GeoBenchDataset(BaseDataset):
             normalize = True,
             **kwargs
         ):
-        print(kwargs)
         super().__init__(ds_name, **kwargs)
 
         split = 'valid' if split == 'val' else split
@@ -48,7 +47,6 @@ class GeoBenchDataset(BaseDataset):
 
         band_names = [b['name'] for b in self.ds_config['bands']]
         self.band_names = band_names
-        print(band_names)
         MEAN, STD = task.get_dataset(band_names=band_names).normalization_stats()
         self.normalize_trf = K.augmentation.Normalize(mean=MEAN, std=STD, keepdim=True)
 
