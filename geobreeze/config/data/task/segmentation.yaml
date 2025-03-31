@@ -1,10 +1,9 @@
 id: segmentation
 
-
 criterion:
   _target_: torch.nn.CrossEntropyLoss
 
-metrics:: 
+metrics: 
 
   train:
   - id: JaccardIndex
@@ -18,3 +17,4 @@ metrics::
     average: micro
 
   ckpt_monitor: mIoU
+  ckpt_monitor_higher_is_better: false

@@ -1,44 +1,55 @@
-"""Digital Typhoon Regression dataset."""
+"""Tropical Cyclone Regression dataset."""
 
-import logging
+
 import torch
 import kornia.augmentation as K
-from torchgeo.datamodules import DigitalTyphoonDataModule
-from .base_dataset import BaseDataset
-
+from torchgeo.datamodules import TropicalCycloneDataModule
+from .base import BaseDataset
+from torchgeo.samplers.utils import _to_tuple
+from .utils.utils import ChannelSampler
+import logging
 logger = logging.getLogger()
 
 class RegDataAugmentation(torch.nn.Module):
-    def __init__(self, size, source_chn_ids, split, mean=None, std=None, band_ids=None, target_chn_ids=None):
+    def __init__(self, size, source_chn_ids, split="val", 
+                 mean=None, std=None, band_ids=None, target_chn_ids=None):
         super().__init__()
 
-        self.output_chn_ids = source_chn_ids
+        # image statistics for the dataset
+        # input_mean = torch.Tensor([0.28154722, 0.28071895, 0.27990073])
+        # input_std = torch.Tensor([0.23435517, 0.23392765, 0.23351675])
 
-        # From 100% of train and val splits
-        mean = torch.Tensor([0.7588])
-        std = torch.Tensor([0.2086])
+        # data already comes normalized between 0 and 1
+        mean = torch.Tensor([74.52810919339])
+        std = torch.Tensor([60.44378695709062])
+
+        self.target_mean = torch.Tensor([50.54925])
+        self.target_std = torch.Tensor([26.836512])
+
 
         if band_ids is not None:
-            if source_chn_ids is not None:
-                self.output_chn_ids = source_chn_ids[band_ids]
-            else:
-                raise ValueError("[ClsDataAugmentation] source_chn_ids must be provided if band_ids are provided")
+            chn_sample = ChannelSampler(band_ids)
+            logger.info(f'[RegDataAugmentation: train] Sampling channels: {band_ids}')
+            self.output_chn_ids = source_chn_ids[band_ids]
+            self.transforms = [chn_sample]
+        else:
+            self.output_chn_ids = source_chn_ids
+            self.transforms = []
 
         if split == "train":
-            self.transform = torch.nn.Sequential(
+            self.transforms.extend([
                 K.Normalize(mean=mean, std=std),
                 K.RandomResizedCrop(size=size, scale=(0.8, 1.0)),
                 K.RandomHorizontalFlip(p=0.5),
                 K.RandomVerticalFlip(p=0.5),
-            )
+            ])
         else:
-            self.transform = torch.nn.Sequential(
-                
+            self.transforms.extend([
                 K.Normalize(mean=mean, std=std),
                 K.Resize(size=size, align_corners=True),
-            )
+            ])
 
-        print(self.transform)
+        self.transform = torch.nn.Sequential(*self.transforms)
 
     def get_chn_ids(self):
         return self.output_chn_ids
@@ -47,13 +58,12 @@ class RegDataAugmentation(torch.nn.Module):
     def forward(self, batch: dict[str,]):
         """Torchgeo returns a dictionary with 'image' and 'label' keys, but engine expects a tuple"""
         x_out = self.transform(batch["image"]).squeeze(0)
-        return x_out, batch["label"].float()
+        # normalize the target
+        target = (batch["label"].float() - self.target_mean) / self.target_std
+        return x_out, target
 
-class DigitalTyphoonDataset(BaseDataset):
-    """Digital Typhoon dataset wrapper.
-    
-    # if automatic download/extraction fails, extract dataset in the root dir with `cat *.tar.gz.* | tar xvfz -`
-    """
+class TropicalCycloneDataset(BaseDataset):
+    """Tropical Cyclone dataset wrapper."""
     def __init__(self, config) -> None:
         """Initialize the dataset wrapper.
         
@@ -61,8 +71,6 @@ class DigitalTyphoonDataset(BaseDataset):
             config: Config object for the dataset, this is the dataset config
         """
         super().__init__(config)
-        self.sequence_length = config.get('sequence_length', 3)
-        logger.info(f"[DigitalTyphoon] Temporal sequence length: {self.sequence_length}")
 
     def create_dataset(self):
         """Create dataset splits for training, validation, and testing."""
@@ -75,11 +83,8 @@ class DigitalTyphoonDataset(BaseDataset):
             self.config['wavelengths_mean_nm'] = output_chn_ids[:,0].tolist()
             self.config['wavelengths_sigma_nm'] = output_chn_ids[:,1].tolist()
 
-        # dataset has argument sequence length which actually dictates the number of channels
-        # commonly in literature is used 3 channels and pretend it is RGB
-        # sequence_length: length of the sequence to return
-        dm = DigitalTyphoonDataModule(
-            root=self.root_dir, sequence_length=self.sequence_length
+        dm = TropicalCycloneDataModule(
+            root=self.root_dir, download=False #requires azcopy to download
         )
         # use the splits implemented in torchgeo
         dm.setup('fit')
@@ -91,7 +96,7 @@ class DigitalTyphoonDataset(BaseDataset):
 
         
         dataset_val.dataset.transforms = eval_transform
-        dataset_test.dataset.transforms = eval_transform
+        dataset_test.transforms = eval_transform
         dataset_train.dataset.transforms = train_transform # for some reason this ordering is important
 
         return dataset_train, dataset_val, dataset_test

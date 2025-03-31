@@ -7,7 +7,7 @@ import logging
 import torch
 from torch import Tensor
 from .spacenet import SpaceNet1
-from .base_dataset import BaseDataset
+from .base import BaseDataset
 from .utils.utils import ChannelSampler
 
 class SegDataAugmentation(torch.nn.Module):

@@ -1,0 +1,14 @@
+defaults:
+- optim: adamw
+
+mode: finetune
+
+base_lr: 0.0001
+epochs: 2
+warmup_epochs: 0
+check_val_every_n_epoch: 0
+
+args_defining_run:
+  optim.lr: lr
+  dl.batch_size: bsz
+  optim.epochs: e

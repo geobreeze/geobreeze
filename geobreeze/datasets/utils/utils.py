@@ -205,7 +205,7 @@ def load_ds_cfg(ds_name):
             for file in f:
                 if file[-5:] == '.yaml':
                     ds[file.split('.')[0]] = os.path.join(r, file)
-    assert ds_name in ds, f'Dataset "{ds_name}" not found at {root} in folders {dirs}'
+    assert ds_name in ds, f'Metadata of dataset"{ds_name}" not found at {root} in folders {dirs}'
     ds_cfg = read_yaml(ds[ds_name])
 
     # get satellites

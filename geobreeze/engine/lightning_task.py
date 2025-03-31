@@ -18,8 +18,9 @@ try:
     from mmseg.models.necks import Feature2Pyramid
     from mmseg.models.decode_heads import UPerHead, FCNHead
     MMSEGM_AVAIL = True
-except:
-    print("MMSEG not installed, skipping imports")
+except Exception as e:
+    print(f"Error importing MMSEG modules: {e}")
+    print("Could not import MMSEG, skipping imports")
     MMSEGM_AVAIL = False
 
 
@@ -40,11 +41,11 @@ class LightningTask(LightningModule):
         self.save_hyperparameters()
 
         self.train_metrics = build_metric(
-            cfg.task.train, num_classes=self.num_classes, key_prefix='train/') 
+            cfg.data.task.metrics.train, num_classes=self.num_classes, key_prefix='train/') 
         self.val_metrics = build_metric(
-            cfg.task.val, num_classes=self.num_classes, key_prefix='val/') 
+            cfg.data.task.metrics.val, num_classes=self.num_classes, key_prefix='val/') 
         self.test_metrics = build_metric(
-            cfg.task.val, num_classes=self.num_classes, key_prefix='test/') 
+            cfg.data.task.metrics.val, num_classes=self.num_classes, key_prefix='test/') 
 
         if self.replace_pe:
             self.new_pe = self.encoder.replace_pe(self.num_channels)

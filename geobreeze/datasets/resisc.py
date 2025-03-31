@@ -1,7 +1,7 @@
 import kornia.augmentation as K
 import torch
 from torchgeo.datasets import RESISC45
-from .base_dataset import BaseDataset
+from .base import BaseDataset
 from .utils.utils import Downsample
 import logging
 logger = logging.getLogger()

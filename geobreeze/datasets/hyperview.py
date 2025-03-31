@@ -16,7 +16,7 @@ from torchgeo.transforms import AugmentationSequential
 from typing import Optional, Callable
 from .utils.utils import ChannelSampler, ChannelSimulator, extract_wavemus, load_ds_cfg, MaskTensor
 from torchvision import transforms
-from .base_dataset import BaseDataset
+from .base import BaseDataset
 
 
 

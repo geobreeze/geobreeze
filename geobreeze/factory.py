@@ -28,27 +28,26 @@ def instantiate(cfg, mode='eval', **kwargs):
     else:
         raise ValueError(f'Unsupported mode "{mode}"')
 
-def make_dataset(cfg, seed=21):
+def make_dataset(cfg, seed=21, **kwargs):
     cfg = deepcopy(cfg)
 
     trf_cfg = cfg.pop('transform', [])
-    transform = make_transform(trf_cfg)
+    transform_list = make_transform_list(trf_cfg)
 
     subset = cfg.pop('subset', -1)
-    ds = datasets.__dict__[cfg.pop('_target_')](**cfg, transform=transform)
+    ds = datasets.__dict__[cfg.pop('_target_')](**cfg, transform_list=transform_list, **kwargs)
     ds = make_subset(ds, subset, seed=seed)
 
     return ds
 
-def make_transform(cfg_list, **kwargs):
+def make_transform_list(cfg_list, **kwargs):
     """ kwargs can be called by the configs, e.g. size"""
-    transform = []
+    transform_list = []
     for cfg in cfg_list: 
         print(cfg)
         trf = instantiate(cfg)
-        transform.append(trf)
-    transform = torch.nn.Sequential(*transform)
-    return transform
+        transform_list.append(trf)
+    return transform_list
 
 def make_subset(ds, subset, seed):
     assert not isinstance(ds, torch.utils.data.IterableDataset), 'Dataset must be map-based.'

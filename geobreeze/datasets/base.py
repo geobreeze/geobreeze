@@ -27,7 +27,6 @@ class BaseDataset(torch.utils.data.Dataset):
         # if self.band_ids is not None:
         #     self.bands_output['chn_ids'] = chn_ids[self.band_ids]
 
-
     def __getitem__(self, idx):
         x, label = self._getitem(idx)
         chn_ids = self.chn_ids

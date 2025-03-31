@@ -12,7 +12,7 @@ import logging
 from tifffile import imread
 import kornia.augmentation as K
 import traceback
-from .base_dataset import BaseDataset
+from .base import BaseDataset
 
 logger = logging.getLogger()
 
@@ -230,11 +230,13 @@ class FmowDataset(BaseDataset):
             root_dir: str,
             split: str,
             keep_sensors: list = None,
-            transform = None,
+            transform_list = None,
             **kwargs
         ):
         super().__init__('FmowDataset', **kwargs)
         num_channels = len(self.chn_ids) if self.band_ids is None else len(self.band_ids)
+
+        transform = K.AugmentationSequential(*transform_list, data_keys=['input'])
 
         self.dataset = FmowBenchmarkDataset(
             root=root_dir, 

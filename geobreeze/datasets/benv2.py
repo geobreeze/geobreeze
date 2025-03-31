@@ -11,7 +11,7 @@ import torch
 from torch import Generator, Tensor
 from torch.utils.data import random_split
 from torchgeo.datasets import BigEarthNet
-from .base_dataset import BaseDataset
+from .base import BaseDataset
 from .utils.utils import ChannelSampler 
 
 class BigEarthNetv2(BigEarthNet):

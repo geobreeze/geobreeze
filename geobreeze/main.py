@@ -248,7 +248,7 @@ def do_linear_probe(cfg, model: EvalModelWrapper, datasets: dict):
 
 def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
 
-    task = cfg.train_dataset.task
+    task = cfg.data.task.id
     experiment_name = cfg.experiment_name
     run_name = cfg.run_name
     num_classes = get_num_classes(datasets)
@@ -332,7 +332,7 @@ def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
     return results
 
 
-@hydra.main(config_path="configs", config_name="config")
+@hydra.main(config_path="config", config_name="config")
 def main(cfg: DictConfig):
 
     cfg, skip = setup(cfg)

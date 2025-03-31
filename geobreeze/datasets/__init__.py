@@ -1,5 +1,5 @@
-from .fmow_wrapper import FmowDataset
-from .geobench_wrapper import GeoBenchDataset
+from .fmow import FmowDataset
+from .geobench import GeoBenchDataset
 
 # from geobreeze.datasets.geobench_wrapper import GeoBenchDataset
 # from geobreeze.datasets.resisc_wrapper import Resics45Dataset

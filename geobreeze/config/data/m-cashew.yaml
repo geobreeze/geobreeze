@@ -3,18 +3,18 @@ defaults:
 
 train:
   _target_: GeoBenchDataset
-  ds_name: m-cashew-plantation
+  ds_name: m-cashew-plant
   split: train
-  transform: ${_vars.augm.segmentation.train}
+  transform: ${_vars.augm.segm.train}
 
 val:
   _target_: GeoBenchDataset
-  ds_name: m-cashew-plantation
+  ds_name: m-cashew-plant
   split: train
-  transform: ${_vars.augm.segmentation.train}
+  transform: ${_vars.augm.segm.train}
 
 test:
   _target_: GeoBenchDataset
-  ds_name: m-cashew-plantation
+  ds_name: m-cashew-plant
   split: train
-  transform: ${_vars.augm.segmentation.train}
+  transform: ${_vars.augm.segm.train}

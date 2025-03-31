@@ -2,7 +2,7 @@ import geobench
 import kornia as K
 import torch
 import logging
-from geobreeze.datasets.base_dataset import BaseDataset
+from geobreeze.datasets.base import BaseDataset
 import torch.nn as nn
 
 logger = logging.getLogger('eval')
@@ -20,7 +20,7 @@ class GeoBenchDataset(BaseDataset):
 
         'm-pv4ger-seg': 'segmentation_v1.0',
         'm-chesapeake-landcover': 'segmentation_v1.0',
-        'm-cashew-plantation': 'segmentation_v1.0',
+        'm-cashew-plant': 'segmentation_v1.0',
         'm-sa-crop-type': 'segmentation_v1.0',
         'm-nz-cattle': 'segmentation_v1.0',
         'm-neontree': 'segmentation_v1.0',
@@ -29,9 +29,11 @@ class GeoBenchDataset(BaseDataset):
     def __init__(self, 
             ds_name,
             split, 
-            transform = nn.Identity(), # possibly problems with segmentation
+            transform_list = [],
+            normalize = True,
             **kwargs
         ):
+        print(kwargs)
         super().__init__(ds_name, **kwargs)
 
         split = 'valid' if split == 'val' else split
@@ -45,34 +47,46 @@ class GeoBenchDataset(BaseDataset):
         assert task is not None, f'{ds_name} not found in geobench'
 
         band_names = [b['name'] for b in self.ds_config['bands']]
+        self.band_names = band_names
+        print(band_names)
         MEAN, STD = task.get_dataset(band_names=band_names).normalization_stats()
-        self.norm = K.augmentation.Normalize(mean=MEAN, std=STD, keepdim=True)
-        self.transform = transform
+        self.normalize_trf = K.augmentation.Normalize(mean=MEAN, std=STD, keepdim=True)
+
+        data_keys = ['input'] if self.is_cls else ['input', 'mask']
+        self.transform = K.augmentation.AugmentationSequential(
+            *transform_list, 
+            data_keys=data_keys
+        )    
+
+        self.normalize = normalize
 
         self.dataset = task.get_dataset(
             split=split,
+            band_names=band_names
         )
 
     def _getitem(self, idx):
         sample = self.dataset[idx]
 
-        # process label
-        if self.is_cls:
-            label = torch.tensor(sample.label, dtype=torch.long)
-        else:
-            label = torch.from_numpy(sample.label.data.astype("float32")).squeeze(-1)
-
         # process image
         x, band_names = sample.pack_to_3d(
-            band_names=None,
+            band_names=self.band_names,
             resample=False,
             fill_value=None,
             resample_order=3,
         )  # h,w,c
         x = torch.from_numpy(x.astype("float32")).permute(2, 0, 1)
 
-        x = self.transform(x)
-        x = self.norm(x)
+        # process label & transform
+        if self.is_cls:
+            label = torch.tensor(sample.label, dtype=torch.long)
+            x = self.transform(x)
+        else:
+            label = torch.from_numpy(sample.label.data.astype("float32")).squeeze(-1)
+            x, label = self.transform(x, label)
+
+        if self.normalize:
+            x = self.normalize_trf(x)
 
         return x, label
 

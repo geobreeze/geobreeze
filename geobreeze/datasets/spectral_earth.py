@@ -15,7 +15,7 @@ import torch
 from torchgeo.datasets.geo import NonGeoDataset
 from torchgeo.samplers.utils import _to_tuple
 from .utils.utils import ChannelSampler, ChannelSimulator, extract_wavemus, load_ds_cfg
-from .base_dataset import BaseDataset
+from .base import BaseDataset
 logger = logging.getLogger()
 
 

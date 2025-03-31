@@ -3,18 +3,12 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "GeoFM"
+name = "geobreeze"
 version = "0.1.0"
-description = "Accessible Geospatial Foundation Models with PyTorch Lightning."
+description = "Simple, Fast, and Flexible Evaluation of Remote Sensing Foundation Models"
 authors = [
-    { name = "Zhitong Xiong", email = "xiongzhitong@gmail.com" }
+    { name = "Leonard Waldmann", email = "leonard.waldmann@tum.de" }
 ]
-
-maintainers = [
-    { name = "Zhitong Xiong", email = "xiongzhitong@gmail.com" },
-    { name = "Nils Lehmann", email = "n.lehmann@tum.de" }
-]
-
 
 dependencies = [
     "torch==2.1.2",
