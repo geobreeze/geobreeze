@@ -96,7 +96,13 @@ def evaluate(
     header = "Test:"
 
     for samples, targets, *_ in metric_logger.log_every(data_loader, 10, header):
-        outputs = model(samples.to(device))
+        if isinstance(samples, dict):
+            for k, v in samples.items():
+                if isinstance(v, torch.Tensor):
+                    samples[k] = v.cuda(non_blocking=True)
+        else:
+            samples = samples.cuda(non_blocking=True)
+        outputs = model(samples)
         targets = targets.to(device)
 
         if criterion is not None:

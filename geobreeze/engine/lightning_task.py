@@ -2,14 +2,17 @@
 
 from lightning import LightningModule
 import torch
-from geobreeze.util.misc import resize, seg_metric
+from geobreeze.util.misc import resize
 import torch.nn as nn
 from .model import EvalModelWrapper
 from einops import rearrange 
-from .base import LinearHead
+from .base import BatchNormLinearHead
 from torch import Tensor
+import hydra
+import logging
 
-from geobreeze.engine.accelerated.utils.metrics import build_metric, build_criterion
+from geobreeze.engine.accelerated.utils.metrics import build_metric
+from geobreeze.factory import make_optimizer, make_criterion
 
 try:
     from mmseg.models.necks import Feature2Pyramid
@@ -20,27 +23,32 @@ except:
     MMSEGM_AVAIL = False
 
 
+logger = logging.getLogger('eval')
+
+
 class LightningTask(LightningModule):
-    def __init__(self, args, model_config, data_config, encoder):
+    
+    encoder: EvalModelWrapper
+    
+    def __init__(self, cfg, encoder: EvalModelWrapper, num_classes):
         super().__init__()
         self.encoder = encoder
-        self.model_config = model_config  # model_config
-        self.args = args  # args for optimization params
-        self.data_config = data_config  # dataset_config
-        self.training_mode = model_config.training_mode
-        self.replace_pe = model_config.get('replace_pe', False)
+        self.model_config = cfg.model
+        self.num_classes = num_classes
+        self.training_mode = cfg.optim.mode
+        self.replace_pe = self.model_config.get('replace_pe', False)
         self.save_hyperparameters()
 
         self.train_metrics = build_metric(
-            args.task_kwargs.train, num_classes=data_config.num_classes, key_prefix='train/') 
+            cfg.task.train, num_classes=self.num_classes, key_prefix='train/') 
         self.val_metrics = build_metric(
-            args.task_kwargs.val, num_classes=data_config.num_classes, key_prefix='val/') 
+            cfg.task.val, num_classes=self.num_classes, key_prefix='val/') 
         self.test_metrics = build_metric(
-            args.task_kwargs.val, num_classes=data_config.num_classes, key_prefix='test/') 
+            cfg.task.val, num_classes=self.num_classes, key_prefix='test/') 
 
         if self.replace_pe:
-            self.new_pe = self.encoder.replace_pe(data_config.num_channels)
-            print('Replaced PE!')
+            self.new_pe = self.encoder.replace_pe(self.num_channels)
+            logger.info('Replaced PE!')
 
     def freeze_and_return_params(self):
         """ freeze & unfreeze weights according to self.training_mode, also
@@ -98,28 +106,22 @@ class LightningTask(LightningModule):
             p.requires_grad = True
 
     def configure_optimizers(self):
-        if self.data_config.task in ["classification", "regression"]:
-            optimizer = torch.optim.SGD(
-                self.freeze_and_return_params(),
-                lr=self.args.lr,
-                weight_decay=self.args.weight_decay,
-            )
-        else:
-            optimizer = torch.optim.AdamW(self.freeze_and_return_params(), lr=self.args.lr)
+        optimizer = make_optimizer(self.cfg.optim.optim, 
+                        params=self.freeze_and_return_params())
 
-        world_size = self.args.num_gpus if self.args.num_gpus >= 1 else 1
+        world_size = self.cfg.num_gpus if self.cfg.num_gpus >= 1 else 1
         num_warmup_steps = (
             len(self.trainer.datamodule.train_dataloader())
-            * self.args.warmup_epochs
+            * self.cfg.optim.warmup_epochs
             // world_size)
         total_steps = (
             len(self.trainer.datamodule.train_dataloader())
-            * self.args.epochs
+            * self.cfg.optim.epochs
             // world_size)
 
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
             optimizer,
-            max_lr=self.args.lr,
+            max_lr=self.cfg.lr,
             total_steps=total_steps,
             anneal_strategy="cos",  # Cosine annealing
             pct_start=float(num_warmup_steps)
@@ -144,14 +146,13 @@ class LightningTask(LightningModule):
 
 class LightningClsRegTask(LightningTask):
 
-    encoder: EvalModelWrapper
+    def __init__(self, cfg, encoder, num_classes):
+        super().__init__(cfg, encoder, num_classes)
 
-    def __init__(self, args, model_config, data_config, encoder: EvalModelWrapper):
-        super().__init__(args, model_config, data_config, encoder)
-
-        self.criterion = build_criterion(args.task_kwargs.criterion)
-        # Batchnorm + Linear
-        self.linear_classifier = LinearHead(in_features=model_config.embed_dim, num_classes=data_config.num_classes)
+        self.criterion = make_criterion(cfg.task.criterion)
+        self.linear_classifier = BatchNormLinearHead(
+            in_features = self.model_config.embed_dim, 
+            num_classes = self.num_classes)
 
     def freeze_and_return_params(self):
         """ freeze / unfreeze weights & return parameters to optimize 
@@ -236,18 +237,15 @@ class LightningClsRegTask(LightningTask):
 
 class LightningSegmentationTask(LightningTask):
 
-    encoder: EvalModelWrapper
-
-    def __init__(self, args, model_config, data_config, encoder: EvalModelWrapper):
-        super().__init__(args, model_config, data_config, encoder)
+    def __init__(self, cfg, encoder, num_classes):
+        super().__init__(cfg, encoder, num_classes)
         assert MMSEGM_AVAIL, "MMSEG needs to be installed"
-        self.embed_dim = model_config.embed_dim
+        self.embed_dim = self.model_config.embed_dim
         self.criterion = nn.CrossEntropyLoss()
         self._build_default_segm_modules()
 
     def _build_default_segm_modules(self):
         edim = self.embed_dim
-        data_config = self.data_config
 
         self.neck = Feature2Pyramid(embed_dim=edim, rescales=[4, 2, 1, 0.5])
         self.decoder = UPerHead(
@@ -256,7 +254,7 @@ class LightningSegmentationTask(LightningTask):
             pool_scales=(1, 2, 3, 6),
             channels=512,
             dropout_ratio=0.1,
-            num_classes=data_config.num_classes,
+            num_classes=self.num_classes,
             norm_cfg=dict(type="SyncBN", requires_grad=True),
             align_corners=False,
             loss_decode=dict(
@@ -270,7 +268,7 @@ class LightningSegmentationTask(LightningTask):
             num_convs=1,
             concat_input=False,
             dropout_ratio=0.1,
-            num_classes=data_config.num_classes,
+            num_classes=self.num_classes,
             norm_cfg=dict(type="SyncBN", requires_grad=True),
             align_corners=False,
             loss_decode=dict(

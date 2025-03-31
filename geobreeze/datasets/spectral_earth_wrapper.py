@@ -359,10 +359,6 @@ class ClsDataAugmentation(torch.nn.Module):
 
 
 class CorineDataset(BaseDataset):
-    def __init__(self, config):
-        super().__init__(config)
-        
-        # assert (self.band_ids is not None and self.target_ds_name is None) or (self.band_ids is None and self.target_ds_name is not None), "Both band_ids and target_ds_name cannot be provided"
 
     def create_dataset(self):
         train_transform = ClsDataAugmentation(split="train", size=self.img_size, band_ids=self.band_ids, source_chn_ids=self.source_chn_ids, target_chn_ids=self.target_chn_ids)

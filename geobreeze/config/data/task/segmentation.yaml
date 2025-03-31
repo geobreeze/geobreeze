@@ -1,0 +1,20 @@
+id: segmentation
+
+
+criterion:
+  _target_: torch.nn.CrossEntropyLoss
+
+metrics:: 
+
+  train:
+  - id: JaccardIndex
+    average: micro
+  - id: F1Score
+    average: micro
+  val:
+  - id: JaccardIndex
+    average: micro
+  - id: F1Score
+    average: micro
+
+  ckpt_monitor: mIoU

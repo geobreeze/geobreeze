@@ -3,6 +3,7 @@ import numpy as np
 from typing import List, Tuple
 import os, yaml
 import kornia.augmentation as K
+from copy import deepcopy
 
 # ------------------------------------------------------------------------------
 # Hyperspectral Eval Augmentations
@@ -192,8 +193,9 @@ def read_yaml(yaml_file):
 def load_ds_cfg(ds_name):
     """ load chn_props and metainfo of dataset from file structure"""
     
-    root = os.environ.get('REPO_PATH', 'dinov2/configs/') # assumes current working directory in PanOpticOn/
-    root = os.path.join(root, 'geobreeze/configs/sensor') # get to <package_name>/configs/sensor
+    root = os.environ['REPO_PATH']
+    root = os.path.join(root, 'geobreeze/datasets/metadata/') 
+    sensor_path = os.path.join(root, 'sensors')
 
     # get dataset
     dirs = [d for d in os.listdir(root) if os.path.isdir(os.path.join(root, d)) and d != 'satellites']
@@ -208,7 +210,7 @@ def load_ds_cfg(ds_name):
 
     # get satellites
     sats = {}
-    for r,d,f in os.walk(os.path.join(root, 'satellites')):
+    for r,d,f in os.walk(sensor_path):
         for file in f:
             if file[-5:] == '.yaml':
                 sats[file.split('.')[0]] = os.path.join(r, file) 
@@ -218,10 +220,10 @@ def load_ds_cfg(ds_name):
     sat_cfgs = {}
     for b in ds_cfg['bands']:
         sat_id, band_id = b['id'].split('/')
-        if sat_id not in sat_cfgs:
+        if sat_id not in sat_cfgs: # lazy loading
             sat_cfgs[sat_id] = read_yaml(sats[sat_id])
-        band_cfg = sat_cfgs[sat_id]['bands'][band_id]
-        band_cfg['id'] = b['id']
+        band_cfg = deepcopy(sat_cfgs[sat_id]['bands'][band_id])
+        band_cfg.update(**b) # overwrite sensor values & add id
         chn_props.append(band_cfg)
     metainfo = {k:v for k,v in ds_cfg.items() if k != 'bands'}
     return {'ds_name': ds_name, 'bands': chn_props, 'metainfo': metainfo}

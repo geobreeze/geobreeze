@@ -1,66 +1,87 @@
 """Factory utily functions to create datasets and models."""
 
-import geobreeze.foundation_models as models
-from geobreeze.datasets.geobench_wrapper import GeoBenchDataset
-from geobreeze.datasets.resisc_wrapper import Resics45Dataset
-from geobreeze.datasets.benv2_wrapper import BenV2Dataset
-from geobreeze.datasets.spectral_earth_wrapper import CorineDataset
-from geobreeze.datasets.digital_typhoon_wrapper import DigitalTyphoonDataset
-from geobreeze.datasets.tropical_cyclone_wrapper import TropicalCycloneDataset
-from geobreeze.datasets.hyperview_wrapper import HyperviewDataset
-from geobreeze.datasets.dummy_dataset import DummyWrapper
+import hydra
+from torch.utils.data import Subset
 from geobreeze.engine.model import EvalModelWrapper
-from geobreeze.datasets.fmow_wrapper import FmowDataset
-from geobreeze.datasets.spacenet1_wrapper import SpaceNet1Dataset
-model_registry = {
-    "croma": models.CromaWrapper,
-    "dinov2": models.DinoV2Wrapper,
-    "softcon": models.SoftConWrapper,
-    "dofa": models.DofaWrapper,
-    # "anysat": models.AnySatWrapper,
-    "senpamae": models.SenPaMAEWrapper,
-    "panopticon": models.PanopticonWrapper,
-    "galileo": models.GalileoWrapper,
-    "anysat": models.AnySatWrapper,
+from copy import deepcopy
 
-    # "satmae": models.SatMAEWrapper,
-    # "scalemae": models.ScaleMAEWrapper,
-    # "gfm": models.GFMWrapper,
-    # Add other model mappings here
-}
+import geobreeze.models as models
+import geobreeze.datasets as datasets
 
-dataset_registry = {
-    "geobench": GeoBenchDataset,
-    "resisc45": Resics45Dataset,
-    "benv2": BenV2Dataset,
-    "corine": CorineDataset,
-    "digital_typhoon": DigitalTyphoonDataset,
-    "tropical_cyclone": TropicalCycloneDataset,
-    "hyperview": HyperviewDataset,
-    "fmow": FmowDataset,
-    "dummy": DummyWrapper,
-    "spacenet1": SpaceNet1Dataset,
-    # Add other dataset mappings here
-}
+import torch
+import torch.nn as nn
+
+import kornia.augmentation as K
 
 
-def create_dataset(config_data):
-    dataset_type = config_data.dataset_type
-    dataset_class = dataset_registry.get(dataset_type)
-    if dataset_class is None:
-        raise ValueError(f"Dataset type '{dataset_type}' not found.")
+def instantiate(cfg, mode='eval', **kwargs):
+    if mode == 'globals':
+        cfg = deepcopy(cfg)
+        _class = cfg.pop('_target_')
+        assert _class in globals(), f'Class {_class} not found in globals.'
+        return globals()[_class](**cfg, **kwargs)
+    elif mode == 'hydra':
+        return hydra.utils.call(cfg, **kwargs)
+    elif mode == 'eval':
+        cfg = deepcopy(cfg)
+        return eval(cfg.pop('_target_'))(**cfg, **kwargs)
+    else:
+        raise ValueError(f'Unsupported mode "{mode}"')
 
-    dataset = dataset_class(config_data)
+def make_dataset(cfg, seed=21):
+    cfg = deepcopy(cfg)
 
-    return dataset.create_dataset()
+    trf_cfg = cfg.pop('transform', [])
+    transform = make_transform(trf_cfg)
 
+    subset = cfg.pop('subset', -1)
+    ds = datasets.__dict__[cfg.pop('_target_')](**cfg, transform=transform)
+    ds = make_subset(ds, subset, seed=seed)
 
-def create_model(model_config, dataset_config=None) -> EvalModelWrapper:
-    model_name = model_config.model_type
-    model_class = model_registry.get(model_name)
-    if model_class is None:
-        raise ValueError(f"Model type '{model_name}' not found.")
+    return ds
 
-    model = model_class(model_config, dataset_config)
+def make_transform(cfg_list, **kwargs):
+    """ kwargs can be called by the configs, e.g. size"""
+    transform = []
+    for cfg in cfg_list: 
+        print(cfg)
+        trf = instantiate(cfg)
+        transform.append(trf)
+    transform = torch.nn.Sequential(*transform)
+    return transform
 
-    return model
+def make_subset(ds, subset, seed):
+    assert not isinstance(ds, torch.utils.data.IterableDataset), 'Dataset must be map-based.'
+
+    if subset > 0:
+
+        def sample_indices(n, k):
+            generator = torch.Generator().manual_seed(seed)
+            return torch.multinomial(torch.ones(n) / n, k, replacement=False, generator=generator).tolist()
+        
+        if isinstance(subset, float):
+            assert 0.0 < subset <= 1.0, 'Float subset must be in range (0, 1].'
+            if subset < 1.0:
+                subset_indices = sample_indices(len(ds), int(len(ds)*subset))
+                ds = Subset(ds, subset_indices)
+        elif isinstance(subset, int):
+            assert subset > 0, 'Int subset must be greater than 0.'
+            assert subset <= len(ds)
+            subset_indices = sample_indices(len(ds), subset)
+            ds = Subset(ds, subset_indices)
+        else:
+            raise ValueError(f'Unsupported subset type "{type(subset)}"')
+        print(f'Got subset={subset}, subsampled dataset to #samples {len(ds)} ')
+
+    return ds
+
+def make_model(cfg) -> EvalModelWrapper:
+    # cfg = deepcopy(cfg)
+    # return models.__dict__[cfg.pop('_target_')](**cfg)
+    return instantiate(cfg, mode='hydra')
+
+def make_optimizer(cfg, **kwargs):
+    return instantiate(cfg, **kwargs)
+
+def make_criterion(cfg):
+    return instantiate(cfg)

@@ -1,0 +1,25 @@
+defaults:
+- task/cls
+
+
+train:
+  _target_: GeoBenchDataset
+  ds_name: m-eurosat
+  split: train
+  band_ids: [1, 2, 4]
+  transform: ${_vars.augm.cls.train}
+
+val:
+  _target_: GeoBenchDataset
+  ds_name: m-eurosat
+  split: val
+  band_ids: [1, 2, 4]
+  transform: ${_vars.augm.cls.val}
+
+test:
+  _target_: GeoBenchDataset
+  ds_name: m-eurosat
+  split: test
+  band_ids: [1, 2, 4]
+  transform: ${_vars.augm.cls.val}
+

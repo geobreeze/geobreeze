@@ -12,10 +12,27 @@ Design decisions:
 """
 
 class EvalModelWrapper(nn.Module):
-    def __init__(self, model_config, data_config): 
+
+    def __init__(self, 
+            image_resolution: int,
+            embed_dim: int,
+            segm_blk_indices = None,
+            accel_cls_blk_indices = None,
+            default_cls_blk_indices = None,
+            patch_size = None,
+        ):
         super().__init__()
-        self.model_config = model_config
-        self.data_config = data_config
+        
+        self.image_resolution = image_resolution
+        self.embed_dim = embed_dim
+        self.patch_size = patch_size
+
+        if segm_blk_indices is not None:
+            self.segm_blk_indices = segm_blk_indices
+        if accel_cls_blk_indices is not None:
+            self.accel_cls_blk_indices = accel_cls_blk_indices
+        if default_cls_blk_indices is not None:
+            self.default_cls_blk_indices = default_cls_blk_indices
 
     def load_encoder(self, blk_indices):
         self._load_encoder(blk_indices)

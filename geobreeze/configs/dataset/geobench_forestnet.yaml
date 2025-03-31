@@ -1,8 +1,0 @@
-defaults:
-  - geobench
-
-benchmark_name: classification_v1.0
-dataset_name: m-forestnet
-task: classification
-num_classes: 12
-multilabel: false

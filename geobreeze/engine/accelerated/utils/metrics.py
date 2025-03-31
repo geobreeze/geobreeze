@@ -95,30 +95,3 @@ def build_metric(metric_cfg: List, num_classes, key_prefix='') -> MetricCollecti
         ret[f'{key_prefix}{key}'] = val
     return MetricCollection(ret)
 
-def build_criterion(cfg):
-    cfg = deepcopy(cfg)
-    id = cfg.pop("id")
-    logger.info(f"Criterion: {id} with cfg {cfg}")
-    if id == "CrossEntropyLoss":
-        return nn.CrossEntropyLoss(**cfg)
-    elif id == 'MultiLabelSoftMarginLoss':
-        return nn.MultiLabelSoftMarginLoss(**cfg)
-    elif id == 'MSELoss':
-        return nn.MSELoss(**cfg)
-    else:
-        raise ValueError(f"Unknown criterion {id}")
-    
-
-def build_optimizer(optim_param_groups, cfg):
-    cfg = deepcopy(cfg)
-    id = cfg.pop("id")
-    cfg.pop('display_name')
-    logger.info(f"Optimizer: {id} with cfg {cfg}")
-    if id == "Adam":
-        return torch.optim.Adam(optim_param_groups, **cfg)
-    elif id == "AdamW":
-        return torch.optim.AdamW(optim_param_groups, **cfg)
-    elif id == "SGD":
-        return torch.optim.SGD(optim_param_groups, **cfg)
-    else:
-        raise ValueError(f"Unknown optimizer {id}")

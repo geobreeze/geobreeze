@@ -307,7 +307,7 @@ class ClsDataAugmentation(torch.nn.Module):
         self.mean = means
         self.std = stds
         self.output_chn_ids = source_chn_ids
-
+                                    
         self.transforms = []
 
         if band_ids is not None:
@@ -439,10 +439,22 @@ class BenV2Dataset(BaseDataset):
 
     def create_dataset(self):
         train_transform = ClsDataAugmentation(
-            split="train", size=self.img_size, bands=self.bands, source_chn_ids=self.source_chn_ids, band_ids=self.band_ids, num_channels=self.num_channels, quantile_norm=self.quantile_norm
+            split="train", 
+            size=self.img_size, 
+            bands=self.bands, 
+            source_chn_ids=self.source_chn_ids, 
+            band_ids=self.band_ids, 
+            num_channels=self.num_channels, 
+            quantile_norm=self.quantile_norm
         )
         eval_transform = ClsDataAugmentation(
-            split="test", size=self.img_size, bands=self.bands, source_chn_ids=self.source_chn_ids, band_ids=self.band_ids, num_channels=self.num_channels, quantile_norm=self.quantile_norm
+            split="test", 
+            size=self.img_size, 
+            bands=self.bands, 
+            source_chn_ids=self.source_chn_ids, 
+            band_ids=self.band_ids, 
+            num_channels=self.num_channels, 
+            quantile_norm=self.quantile_norm
         )
 
         # Override the config with the transformed channel ids

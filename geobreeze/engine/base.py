@@ -10,7 +10,7 @@ activation_fns = {
 }
 
 
-class LinearHead(nn.Module):
+class BatchNormLinearHead(nn.Module):
     """Linear Classification Head that is attached on top of feature extractors."""
 
     def __init__(self, in_features: int, num_classes: int, activation: str | None = None) -> None:

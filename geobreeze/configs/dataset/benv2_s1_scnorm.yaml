@@ -1,8 +1,0 @@
-defaults:
-  - benv2_all
-
-bands: s1
-dataset_name: benv2_s1
-num_channels: 2
-
-quantile_norm: true

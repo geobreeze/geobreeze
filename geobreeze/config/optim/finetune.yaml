@@ -1,0 +1,6 @@
+mode: finetune
+
+args_defining_run:
+  optim.lr: lr
+  dl.batch_size: bsz
+  optim.epochs: e

@@ -1,0 +1,9 @@
+_target_: geobreeze.models.panopticon.Panopticon
+
+image_resolution: 224
+embed_dim: 768
+patch_size: 14
+
+segm_blk_indices: [3, 5, 7, 11]
+accel_cls_blk_indices: [8, 9, 10, 11]
+default_cls_blk_indices: [11]

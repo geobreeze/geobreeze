@@ -7,6 +7,7 @@
 
 
 from enum import Enum
+import torch.utils
 from torch.utils.data import DataLoader, DistributedSampler
 import logging
 import torch
@@ -26,7 +27,21 @@ class SamplerType(Enum):
     INFINITE = 0 # samples infinitely over training dataset
     EPOCH = 1 # samples the exact dataset (drop_last=False) exactly once
 
+class CollateSubsample:
+    """ Randomly subsample channels of the input tensor """
 
+    def __init__(self, seed):
+        self.rng = np.random.default_rng(seed=seed)
+        self.default_collate_fn = torch.utils.data._utils.collate.default_collate
+
+    def __call__(self, tuple_list):
+        nchns = tuple_list[0].shape[0]
+        nchns_to_keep = self.rng.integers(1, nchns+1)
+        idx = self.rng.choice(range(nchns), nchns_to_keep, replace=False)
+        for i in range(len(tuple_list)):
+            tuple_list[i] = (tuple_list[i][0][idx], tuple_list[i][1])
+        return self.default_collate_fn(x_dict_list)
+    
 
 def make_data_loader(
     dataset,
@@ -38,11 +53,16 @@ def make_data_loader(
     pin_memory: bool = True,
     persistent_workers: bool = False,
     sampler_advance: int = 0,
+    batchwise_spectral_subsampling = False,
 ):
     
     sampler = make_sampler(
         dataset, sampler_type, shuffle=shuffle, seed=seed, sampler_advance=sampler_advance
     )
+
+    collate_fn = None
+    if batchwise_spectral_subsampling:
+        collate_fn = CollateSubsample(seed)
 
     data_loader = DataLoader(
         dataset,
@@ -51,6 +71,7 @@ def make_data_loader(
         num_workers=num_workers,
         pin_memory=pin_memory,
         persistent_workers=persistent_workers,
+        collate_fn=collate_fn,
     )
 
     return data_loader

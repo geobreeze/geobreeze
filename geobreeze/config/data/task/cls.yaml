@@ -1,0 +1,26 @@
+id: classification
+is_multilabel: false
+
+criterion:
+  _target_: torch.nn.CrossEntropyLoss
+
+metrics:
+  train:
+  - id: MulticlassAccuracy
+    top_k: 1
+    average: micro
+
+  val:
+  - id: MulticlassAccuracy
+    top_k: 1
+    average: micro
+  - id: MulticlassAccuracy
+    top_k: 1
+    average: macro
+  - id: F1Score
+    average: micro
+  - id: F1Score
+    average: macro
+
+  ckpt_monitor: acc_top-1_micro
+  ckpt_monitor_higher_is_better: true

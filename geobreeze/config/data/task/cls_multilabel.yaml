@@ -1,0 +1,23 @@
+id: classification
+is_multilabel: true
+
+criterion:
+  _target_: torch.nn.MultiLabelSoftMarginLoss
+
+metrics:
+  train:
+  - id: MultiLabelAveragePrecision
+    average: micro
+
+  val:
+  - id: MultiLabelAveragePrecision
+    average: micro
+  - id: MultiLabelAveragePrecision
+    average: macro
+  - id: MultiLabelF1Score
+    average: micro
+  - id: MultiLabelF1Score
+    average: macro
+
+  ckpt_monitor: MulLabAvergPrec_micro
+  ckpt_monitor_higher_is_better: true

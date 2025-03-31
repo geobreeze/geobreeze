@@ -1,9 +1,0 @@
-defaults:
-  - geobench
-  - s2_4b
-
-benchmark_name: classification_v1.0
-dataset_name: m-brick-kiln
-task: classification
-num_classes: 2
-multilabel: false

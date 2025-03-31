@@ -7,9 +7,7 @@ from lightning.pytorch.loggers import MLFlowLogger, WandbLogger
 from lightning import Trainer
 from lightning.pytorch.strategies import DDPStrategy
 import torch
-from datasets.data_module import BenchmarkDataModule
 from lightning.pytorch import seed_everything
-from factory import create_model
 from omegaconf import open_dict
 import hydra
 from omegaconf import DictConfig, OmegaConf
@@ -19,96 +17,72 @@ from geobreeze.engine.accelerated.utils.logger import setup_logger, plot_curves
 from geobreeze.engine.accelerated.linear import run_eval_linear
 from geobreeze.engine.accelerated.knn import eval_knn_with_model
 from geobreeze.engine.lightning_task import LightningClsRegTask, LightningSegmentationTask
+from geobreeze.engine.model import EvalModelWrapper
+
 import logging
 import json
+from copy import deepcopy
+from factory import make_dataset, make_model
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore")
 
-
-def print_trainable_parameters(model):
-    trainable_params = 0
-    all_param = 0
-    for _, param in model.named_parameters():
-        all_param += param.numel()
-        if param.requires_grad:
-            trainable_params += param.numel()
-    print(
-        f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param:.2f}"
-    )
+logger = logging.getLogger('eval')
 
 
-@hydra.main(config_path="configs", config_name="config")
-def main(cfg: DictConfig):
-    task = cfg.dataset.task
-    training_mode = cfg.model.training_mode
-    os.environ['CDIR'] = os.path.join(os.environ['REPO_PATH'], 'geobreeze/configs/')
-    default_config_dir = os.path.join(os.environ['REPO_PATH'], 'geobreeze/configs/task_defaults/')
+def process_config(cfg):
 
-    # assign engine
-    if training_mode in ['linear_probe','knn']:
-        engine = 'accelerated'
-    else:
-        engine = 'lightning'
+    # process datasets
+    # if '_target_' in cfg.data:
+    #     # logger.info('Copying given dataset to all of train/val/test splits')
+    #     ds_cfg = deepcopy(cfg.data)
+    #     with open_dict(ds_cfg):
+    #         ds_cfg.pop('data')
+    #         ds_cfg.data = dict(train=ds_cfg, val=ds_cfg, test=ds_cfg)
 
-    # engine specific input handling
-    if engine == 'accelerated':
-        if training_mode == 'linear_probe':
-            f = 'linear_probe_accel.yaml'
-        else:
-            f = 'knn_accel.yaml'
-        defaults = OmegaConf.load(os.path.join(default_config_dir, f))
-        cfg = OmegaConf.merge(defaults, cfg)
+    # os.environ['CDIR'] = os.path.join(os.environ['REPO_PATH'], 'geobreeze/configs/')
+    # default_config_dir = os.path.join(os.environ['REPO_PATH'], 'geobreeze/configs/task_defaults/')
 
-        if training_mode == 'linear_probe':
-            assert OmegaConf.is_list(cfg.lr), 'lr should be a list for accelerated engine'
-            args_defining_run = {
-                "batch_size": "bsz",
-                "epochs": "e",
-                'optim.display_name': 'optim',
-            }
-        else:
-            args_defining_run = {
-                'nb_knn': 'k',
-                'temperature_list': 'T',
-                'normmode_list': 'norm',
-            }
+    # process metrics
+    # task_id = cfg.data.task
+    # task_kwargs = OmegaConf.load(os.path.join(default_config_dir, 'metrics_and_criterion.yaml'))
+    # key = task_id
+    # if cfg.data.get('is_multilabel', False):
+    #     key = f'multilabel_{key}'
+    # task_kwargs = task_kwargs[key]
+    # task_cfg = OmegaConf.create(dict(task=task_kwargs))
+    # print('------------- TASK')
+    # print(OmegaConf.to_yaml(task_cfg))
+    # cfg = OmegaConf.merge(task_cfg, cfg)
+
+    # optim defaults
+    training_mode = cfg.optim.mode
+    if training_mode in ['knn','linear_probe']:
+        # if training_mode == 'linear_probe':
+        #     f = 'linear_probe.yaml'
+        # else:
+        #     f = 'knn.yaml'
+        # defaults = OmegaConf.load(os.path.join(default_config_dir, f))
+        # defaults = OmegaConf.create(dict(optim=defaults))
+        # cfg = OmegaConf.merge(defaults, cfg)
         assert cfg.num_gpus == 1, 'accelerated only supports single gpu for now'
 
+    elif training_mode == 'finetune':
+        # defaults = OmegaConf.load(os.path.join(default_config_dir, 'finetune.yaml'))
+        # defaults = OmegaConf.create(dict(optim=defaults))
+        # cfg = OmegaConf.merge(defaults, cfg)
 
-    elif engine == 'lightning':
-        defaults = OmegaConf.load(os.path.join(default_config_dir, 'lightning.yaml'))
-        cfg = OmegaConf.merge(defaults, cfg)
-
-        assert all([k not in cfg for k in ['pooling','n_last_blocks_list']]), 'only for accelerated linear_prob engine'
-
-        args_defining_run = {
-            "lr": "lr",
-            "batch_size": "bsz",
-            "epochs": "e",
-        }
-
-        # Scale learning rate
-        # assert (cfg.lr == -1) != (cfg.base_lr == -1), "either lr or base_lr should be set"
-        assert not 'base_lr' in cfg, 'base_lr is legacy, only provide lr'
         with open_dict(cfg):
-            cfg.inputted_lr = cfg.lr
-        cfg.lr = cfg.lr * cfg.batch_size / 256 * cfg.num_gpus
-
-    # get metrics
-    task_kwargs = OmegaConf.load(os.path.join(default_config_dir, 'metrics_and_criterion.yaml'))
-    key = task
-    if cfg.dataset.multilabel:
-        key = f'multilabel_{key}'
-    with open_dict(cfg):
-        cfg.task_kwargs = task_kwargs[key]
+            cfg.optim.lr = cfg.optim.base_lr * cfg.dl.batch_size / 256 * cfg.num_gpus
+            # logger.info(f'Scaled learning rate from {cfg.optim.base_lr} to {cfg.optim.lr} (bsz={cfg.dl.batch_size}, num_gpus={cfg.num_gpus})')
 
 
     # setup output dir
     experiment_name = os.path.relpath(cfg.output_dir, os.environ['ODIR'])
     if cfg.add_defining_args:
             
+        args_defining_run = cfg.optim.args_defining_run
         run_name = "_".join(
             [f"{v}={OmegaConf.select(cfg,k)}" for k, v in args_defining_run.items()])
 
@@ -118,8 +92,23 @@ def main(cfg: DictConfig):
 
     else:
         run_name = (
-            f"{experiment_name}_run_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            f"{experiment_name}_run_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_{os.urandom(3).hex()}"
         )
+
+    with open_dict(cfg):
+        cfg.experiment_name = experiment_name
+        cfg.run_name = run_name
+
+    # resolve config
+    cfg = OmegaConf.create(OmegaConf.to_container(cfg, resolve=True))
+    with open_dict(cfg):
+        cfg.pop('_vars')
+    
+    return cfg
+
+def setup(cfg):
+
+    cfg = process_config(cfg)
 
     # check if task already executed
     if os.path.exists(os.path.join(cfg.output_dir, "results.csv")):
@@ -127,245 +116,254 @@ def main(cfg: DictConfig):
             print(f"Overwriting existing output dir: {cfg.output_dir}")
         else:
             print(f"Output dir already exists: {cfg.output_dir}. Skipping job.")
-            return
+            return cfg, True
 
+    # intialize logger
+    Path(cfg.output_dir).mkdir(parents=True, exist_ok=True)
+    setup_logger('eval', to_sysout=True, filename=os.path.join(cfg.output_dir, 'log.txt'))
+
+    # save config
+    logger.info(OmegaConf.to_yaml(cfg))
+    OmegaConf.save(cfg, os.path.join(cfg.output_dir, "config.yaml"))
+    
     seed_everything(cfg.seed)
 
-    # print & save config
-    cfg = OmegaConf.create(OmegaConf.to_container(cfg, resolve=True))
-    Path(cfg.output_dir).mkdir(parents=True, exist_ok=True)
-    OmegaConf.save(cfg, os.path.join(cfg.output_dir, "config.yaml"))
-    print(OmegaConf.to_yaml(cfg))
+    return cfg, False
 
-    # create model
-    model_wrapper = create_model(cfg.model, cfg.dataset)
 
-    # create datamodule
-    cfg.dataset.image_resolution = cfg.model.image_resolution
-    data_module = BenchmarkDataModule(
-        dataset_config=cfg.dataset,
-        batch_size=cfg.batch_size,
-        num_workers=cfg.num_workers,
-        pin_memory=cfg.pin_mem,
-        seed=cfg.seed,
+def get_num_classes(datasets):
+    ds = datasets['train']
+    if isinstance(ds, torch.utils.data.Subset):
+        ds = ds.dataset
+    return ds.num_classes
+
+def do_knn(cfg, model: EvalModelWrapper, datasets: dict):
+    model.load_encoder(cfg.model.default_cls_blk_indices)
+
+    results_list = eval_knn_with_model(
+        model,
+        cfg.output_dir,
+        datasets['train'],
+        datasets['val'],
+        nb_knn = cfg.optim.nb_knn,
+        normmode_list = cfg.optim.normmode_list,
+        temperature_list = cfg.optim.temperature_list,
+        autocast_dtype = torch.bfloat16,
+        metric_cfg = cfg.data.task.metrics.val,
+        dl_cfg = cfg.dl,
+        num_classes = get_num_classes(datasets),)
+
+    return pd.DataFrame(results_list)
+
+def do_linear_probe(cfg, model: EvalModelWrapper, datasets: dict):
+
+    experiment_name = cfg.experiment_name
+    run_name = cfg.run_name
+
+    model.load_encoder(model.accel_cls_blk_indices)
+
+    heads_cfg = OmegaConf.create(dict(
+        n_last_blocks_list = cfg.optim.n_last_blocks_list,
+        pooling = cfg.optim.pooling,
+        learning_rates = cfg.optim.lr,
+        use_additional_1dbatchnorm_list = cfg.optim.use_additional_1dbatchnorm_list,
+    ))
+
+    results_list = run_eval_linear(
+        model,
+        cfg.output_dir,
+        datasets['train'],
+        datasets['val'],
+        [datasets['test']],
+        get_num_classes(datasets),
+        cfg.dl,
+        heads_cfg,
+        cfg.optim.epochs,
+        eval_period_epoch = cfg.optim.check_val_every_n_epoch,
+        criterion_cfg = cfg.data.task.criterion,
+        val_metrics = cfg.data.task.metrics.val,
+        optim_cfg=cfg.optim.optim,
+        val_monitor = cfg.data.task.metrics.ckpt_monitor,
+        val_monitor_higher_is_better = cfg.data.task.metrics.ckpt_monitor_higher_is_better,
+        batchwise_spectral_subsampling = cfg.optim.batchwise_spectral_subsampling,
+        resume = cfg.resume,
     )
 
+    # process loss file
+    loss_file = os.path.join(cfg.output_dir, 'linear_probe_all_losses.csv')
+    losses = pd.read_csv(loss_file).reset_index(drop=True)
+    classifiers = losses.columns[1:]
+
+    # process metrics file
+    metrics_file = os.path.join(cfg.output_dir, 'linear_probe_all_metrics.json')
+    metrics_by_cls = {}
+    with open(metrics_file, 'r') as f:
+        lines = f.readlines()
+    for l in lines:
+        d = json.loads(l)
+        cls = d['classifier']
+        if cls not in metrics_by_cls:
+            metrics_by_cls[cls] = {}
+        if 'test' in d['prefix']:
+            key = d['prefix']
+        else:
+            key = d['iteration']
+        metrics_by_cls[cls][key] = {k:v for k,v in d.items() if k not in ['prefix','iteration','classifier']}
+
+    if cfg.logger == 'mlflow':
+        logger.info('Logging to mlflow')
+        import mlflow
+        mlflow.set_tracking_uri(f"file:{os.path.join(os.environ['ODIR'], '_mlruns')}")
+        mlflow.set_experiment(os.path.join(experiment_name, run_name))
+        
+        for cls in classifiers:
+            with mlflow.start_run(run_name=cls):
+                # example: blocks_4_pooling_default_lr_2_50000
+                params = dict(
+                    blocks = cls.split('_')[1],
+                    pooling = cls.split('_')[3],
+                    lr = float('.'.join(cls.split('_')[-4:-2])) ,
+                    use_1dbn = cls.split('_')[-1],)
+                mlflow.log_params(params)
+
+                for i in range(losses.shape[0]):
+                    mlflow.log_metric(f'loss', losses.at[i,cls], step=losses.at[i, 'iteration'])
+
+                if cls not in metrics_by_cls:
+                    print(f'Skipping {cls} (probably crashed because of high lr)')
+                    continue
+                for i, metrics in metrics_by_cls[cls].items():
+                    if isinstance(i, int):
+                        for name, val in metrics.items():
+                            mlflow.log_metric(f'val/{name}', val, step=int(i))
+                    else:
+                        for name, val in metrics.items():
+                            mlflow.log_metric(f'{i}/{name}', val)
+            
+    else:
+        raise NotImplementedError()
+    
+    plot_curves(cfg.output_dir) # plot average curve into .png file
+    return pd.DataFrame(results_list)
+
+def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
+
+    task = cfg.train_dataset.task
+    experiment_name = cfg.experiment_name
+    run_name = cfg.run_name
+    num_classes = get_num_classes(datasets)
+
+    if task in ['classification','regression']:
+        model.load_encoder(model.default_cls_blk_indices)
+        pl_task = LightningClsRegTask(cfg, model, num_classes)
+    elif task == 'segmentation':
+        model.load_encoder(model.segm_blk_indices)
+        pl_task = LightningSegmentationTask(cfg, model, num_classes)
+    else:
+        raise NotImplementedError()
+
+    # Setup logger
+    if cfg.logger == "mlflow":
+        logger = MLFlowLogger(
+            experiment_name=experiment_name,
+            run_name=run_name,
+            tracking_uri=f"file:{os.path.join(os.environ['ODIR'], '_mlruns')}",)
+    else:
+        raise NotImplementedError(f'Logger {cfg.logger} not implemented.')
+
+
+    # Callbacks
+    monitor = os.path.join('val',cfg.data.task.metrics.ckpt_monitor)
+    callbacks = [
+        ModelCheckpoint(
+            dirpath=os.path.join(cfg.output_dir, "checkpoints"),
+            filename="best_model-{epoch}",
+            monitor=monitor,
+            mode="max",
+            save_last=True,
+        ),
+        LearningRateMonitor(logging_interval="epoch"),
+    ]
+
+    # Initialize trainer
+    trainer = Trainer(
+        logger=logger,
+        callbacks=callbacks,
+        max_epochs=cfg.optim.epochs,
+        num_sanity_val_steps=0,
+        check_val_every_n_epoch=cfg.optim.check_val_every_n_epoch,
+        devices=cfg.num_gpus,
+    )
+
+    # initialize dataloader
+    train_dl = torch.utils.data.DataLoader(
+        datasets['train'],
+        **cfg.dl,
+        shuffle=True,
+        drop_last=True,
+    )
+    val_dl = torch.utils.data.DataLoader(
+        datasets['val'],
+        **cfg.dl,
+        shuffle=False,
+        drop_last=False,
+    )
+    test_dl = torch.utils.data.DataLoader(
+        datasets['test'],
+        **cfg.dl,
+        shuffle=False,
+        drop_last=False,
+    )
+
+    # Train
+    ckpt_path = os.path.join(cfg.output_dir, 'checkpoints','last.ckpt')
+    trainer.fit(pl_task, train_dl, val_dl, ckpt_path=ckpt_path if cfg.resume else None)
+
+    # Test
+    best_checkpoint_path = callbacks[0].best_model_path
+    results_per_ds_list = trainer.test(pl_task, test_dl, ckpt_path=best_checkpoint_path)
+    results_list = [dict(
+        metric_str=k,
+        val=v,
+        best_classifier=f'lr={cfg.lr}'
+    ) for ds_dict in results_per_ds_list for k,v in ds_dict.items()]
+    results = pd.DataFrame(results_list)
+
+    return results
+
+
+@hydra.main(config_path="configs", config_name="config")
+def main(cfg: DictConfig):
+
+    cfg, skip = setup(cfg)
+    if skip:
+        return
+
+    datasets = {split: make_dataset(cfg.data[split], seed=cfg.seed) for split in ['train','val','test']}
+    model = make_model(cfg.model)
 
     # execute training with correct engine
-    if engine == 'lightning':
+    training_mode = cfg.optim.mode
+    if training_mode == 'knn':
+        logger.info('Running KNN')
+        results = do_knn(cfg, model, datasets)
 
-        if task in ['classification','regression']:
-            model_wrapper.load_encoder(cfg.model.default_cls_blk_indices)
-            pl_task = LightningClsRegTask(cfg, cfg.model, cfg.dataset, model_wrapper)
-        elif task == 'segmentation':
-            model_wrapper.load_encoder(cfg.model.segm_blk_indices)
-            pl_task = LightningSegmentationTask(cfg, cfg.model, cfg.dataset, model_wrapper)
-        else:
-            raise NotImplementedError()
+    elif training_mode == 'linear_probe':
+        logger.info('Running linear probe')
+        results = do_linear_probe(cfg, model, datasets)
+    
+    elif training_mode == 'finetune':
+        logger.info('Running finetune')
+        results = do_finetune(cfg, model, datasets)
 
-        # Setup logger
-        if cfg.logger == "mlflow":
-            logger = MLFlowLogger(
-                experiment_name=experiment_name,
-                run_name=run_name,
-                tracking_uri=f"file:{os.path.join(os.environ['ODIR'], '_mlruns')}",)
-        elif cfg.logger == 'wandb':
-            raise NotImplementedError()
-
-
-        # Callbacks
-        monitor = os.path.join('val',cfg.task_kwargs.ckpt_monitor)
-        callbacks = [
-            ModelCheckpoint(
-                dirpath=os.path.join(cfg.output_dir, "checkpoints"),
-                filename="best_model-{epoch}",
-                monitor=monitor,
-                mode="max",
-                save_last=True,
-            ),
-            LearningRateMonitor(logging_interval="epoch"),
-        ]
-
-        # Initialize trainer
-
-        if cfg.num_gpus == 0: # cpu
-            trainer = Trainer(
-                logger=logger,
-                callbacks=callbacks,
-                accelerator='cpu',
-                max_epochs=cfg.epochs,
-                num_sanity_val_steps=0,
-                **cfg.trainer)
-
-        elif cfg.num_gpus == 1: # single gpu
-            trainer = Trainer(
-                logger=logger,
-                callbacks=callbacks,
-                accelerator='gpu',
-                devices=cfg.num_gpus,
-                max_epochs=cfg.epochs,
-                num_sanity_val_steps=0,
-                **cfg.trainer)
-
-        else: # ddp on multiple gpus
-            trainer = Trainer(
-                logger=logger,
-                callbacks=callbacks,
-                accelerator='gpu',
-                strategy=DDPStrategy(find_unused_parameters=False),
-                devices=cfg.num_gpus,
-                max_epochs=cfg.epochs,
-                num_sanity_val_steps=0,
-                **cfg.trainer)
-
-
-        # Train
-        ckpt_path = os.path.join(cfg.output_dir, 'checkpoints','last.ckpt')
-        trainer.fit(pl_task, data_module, ckpt_path=ckpt_path if cfg.resume else None)
-
-        if cfg.trainer.get('fast_dev_run', False):
-            print('No eval for fastdevrun.')
-            return
-
-        # Test
-        best_checkpoint_path = callbacks[0].best_model_path
-        results_per_ds_list = trainer.test(pl_task, data_module, ckpt_path=best_checkpoint_path)
-        results_list = [dict(
-            metric_str=k,
-            val=v,
-            best_classifier=f'lr={cfg.lr}'
-        ) for ds_dict in results_per_ds_list for k,v in ds_dict.items()]
-        results = pd.DataFrame(results_list)
-
-
-    elif engine == 'accelerated':
-        
-        print("CONFIG MODEL")
-        print(cfg.model)
-        print(cfg.model.keys())
-
-        data_module.setup()
-        setup_logger('eval', to_sysout=True, filename=os.path.join(cfg.output_dir, 'log.txt'))
-        logger = logging.getLogger("eval")
-
-        dl_cfg = OmegaConf.create(dict(
-            batch_size=cfg.batch_size,
-            num_workers=cfg.num_workers,
-        ))
-
-        if training_mode == 'linear_probe':
-            model_wrapper.load_encoder(cfg.model.accel_cls_blk_indices)
-
-            heads_cfg = OmegaConf.create(dict(
-                n_last_blocks_list = cfg.n_last_blocks_list,
-                pooling = cfg.pooling,
-                learning_rates = cfg.lr,
-                use_additional_1dbatchnorm_list = cfg.use_additional_1dbatchnorm_list,
-            ))
-
-            results_list = run_eval_linear(
-                model_wrapper,
-                cfg.output_dir,
-                data_module.dataset_train,
-                data_module.dataset_val,
-                [data_module.dataset_test],
-                cfg.dataset.num_classes,
-                dl_cfg,
-                heads_cfg,
-                cfg.epochs,
-                eval_period_epoch = cfg.trainer.check_val_every_n_epoch,
-                criterion_cfg = cfg.task_kwargs.criterion,
-                val_metrics = cfg.task_kwargs.val,
-                optim_cfg=cfg.optim,
-                val_monitor = cfg.task_kwargs.ckpt_monitor,
-                val_monitor_higher_is_better = cfg.task_kwargs.ckpt_monitor_higher_is_better,
-            )
-
-            # process loss file
-            loss_file = os.path.join(cfg.output_dir, 'linear_probe_all_losses.csv')
-            losses = pd.read_csv(loss_file).reset_index(drop=True)
-            classifiers = losses.columns[1:]
-
-            # process metrics file
-            metrics_file = os.path.join(cfg.output_dir, 'linear_probe_all_metrics.json')
-            metrics_by_cls = {}
-            with open(metrics_file, 'r') as f:
-                lines = f.readlines()
-            for l in lines:
-                d = json.loads(l)
-                cls = d['classifier']
-                if cls not in metrics_by_cls:
-                    metrics_by_cls[cls] = {}
-                if 'test' in d['prefix']:
-                    key = d['prefix']
-                else:
-                    key = d['iteration']
-                metrics_by_cls[cls][key] = {k:v for k,v in d.items() if k not in ['prefix','iteration','classifier']}
-
-            if cfg.logger == 'mlflow':
-                logger.info('Logging to mlflow')
-                import mlflow
-                mlflow.set_tracking_uri(f"file:{os.path.join(os.environ['ODIR'], '_mlruns')}")
-                mlflow.set_experiment(os.path.join(experiment_name, run_name))
-                
-                for cls in classifiers:
-                    with mlflow.start_run(run_name=cls):
-                        # example: blocks_4_pooling_default_lr_2_50000
-                        params = dict(
-                            blocks = cls.split('_')[1],
-                            pooling = cls.split('_')[3],
-                            lr = float('.'.join(cls.split('_')[-4:-2])) ,
-                            use_1dbn = cls.split('_')[-1],)
-                        mlflow.log_params(params)
-
-                        for i in range(losses.shape[0]):
-                            mlflow.log_metric(f'loss', losses.at[i,cls], step=losses.at[i, 'iteration'])
-
-                        # print('key', cls)
-                        if cls not in metrics_by_cls:
-                            print(f'Skipping {cls} (probably crashed because of high lr)')
-                            continue
-                        for i, metrics in metrics_by_cls[cls].items():
-                            if isinstance(i, int):
-                                for name, val in metrics.items():
-                                    mlflow.log_metric(f'val/{name}', val, step=int(i))
-                            else:
-                                for name, val in metrics.items():
-                                    mlflow.log_metric(f'{i}/{name}', val)
-                    
-            else:
-                raise NotImplementedError()
-            
-            plot_curves(cfg.output_dir) # plot average curve into .png file
-
-        
-        elif training_mode == 'knn':
-            model_wrapper.load_encoder(cfg.model.default_cls_blk_indices)
-
-            results_list = eval_knn_with_model(
-                model_wrapper,
-                cfg.output_dir,
-                data_module.dataset_train,
-                data_module.dataset_test,
-                nb_knn = cfg.nb_knn,
-                normmode_list = cfg.normmode_list,
-                temperature_list = cfg.temperature_list,
-                autocast_dtype = torch.bfloat16,
-                metric_cfg = cfg.task_kwargs.val,
-                dl_cfg = dl_cfg,
-                num_classes = cfg.dataset.num_classes,)
-
-        else :
-            raise ValueError(f'Unknown training_mode: {training_mode}')
     else:
-        raise ValueError(f'Unknown engine: {engine}')
+        raise ValueError(f'Unknown training_mode: {training_mode}')
 
     # save results
-    results = pd.DataFrame(results_list)
     results = results[['metric_str','val','best_classifier']]
     results.rename(columns={'metric_str':'metric'}, inplace=True)
     results.reset_index(drop=True, inplace=True)
-    print(f'Results: \n\n{results.to_string()}\n')
+    logger.info(f'Results: \n\n{results.to_string()}\n')
     results.to_csv(os.path.join(cfg.output_dir, "results.csv"), index=False)
 
 

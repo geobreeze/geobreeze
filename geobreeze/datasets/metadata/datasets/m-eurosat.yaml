@@ -1,0 +1,37 @@
+task: classification
+num_classes: 10
+multilabel: false
+
+image_resolution: 64
+
+bands:
+- id: sentinel2/B01
+- id: sentinel2/B02
+- id: sentinel2/B03
+- id: sentinel2/B04
+- id: sentinel2/B05
+- id: sentinel2/B06
+- id: sentinel2/B07
+- id: sentinel2/B08
+- id: sentinel2/B8A
+- id: sentinel2/B09
+- id: sentinel2/B10
+- id: sentinel2/B11
+- id: sentinel2/B12
+
+
+senpamae_srf_name: rfs_sentinel2_a_13b.npy
+senpamae_channels:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
+  - 12

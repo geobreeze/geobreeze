@@ -61,7 +61,6 @@ class FmowBenchmarkDataset(NonGeoDataset):
                  normalize=True, 
                  root='${RDIR}/datasets',
                  keep_sensors=['WORLDVIEW02', 'WORLDVIEW03_VNIR', 'GEOEYE01', 'QUICKBIRD02'],
-                 return_rgb=False,
                  transforms=None,
                  full_spectra=False,
                  output_dtype='float32',
@@ -81,7 +80,7 @@ class FmowBenchmarkDataset(NonGeoDataset):
 
         root = os.path.expandvars(root)
         self.transforms = transforms
-        self.return_rgb = return_rgb
+        self.return_rgb = False
         self.num_classes = len(self.CLASS_NAMES)
         self.num_channels = num_channels
 
@@ -226,90 +225,28 @@ class FmowBenchmarkDataset(NonGeoDataset):
 
 
 
-class ClsDataAugmentation(torch.nn.Module):
-    def __init__(self, size, source_chn_ids, split="val", mean=None, std=None, band_ids=None, target_chn_ids=None):
-        super().__init__()
-
-        flipH = K.RandomHorizontalFlip(p=0.5, keepdim=True)
-        flipV = K.RandomVerticalFlip(p=0.5, keepdim=True)
-        rcrop = K.RandomResizedCrop(_to_tuple(size), scale=(0.8, 1.0), keepdim=True)
-        r = K.Resize(_to_tuple(size), keepdim=True)
-        self.output_chn_ids = None
-        
-        # setup HS specific augmentations
-        if band_ids is not None:
-            chn_sample = ChannelSampler(band_ids)
-            if source_chn_ids is not None:
-                self.output_chn_ids = source_chn_ids[band_ids]
-            else:
-                raise ValueError("[ClsDataAugmentation] source_chn_ids must be provided if band_ids are provided")
-        elif target_chn_ids is not None:
-            chn_sim = ChannelSimulator(source_chn_ids=source_chn_ids, target_chn_ids=target_chn_ids)
-            self.output_chn_ids = target_chn_ids
-        else:
-            self.output_chn_ids = source_chn_ids
-
-        
-        self.transforms = []
-        if split == "train":
-            if band_ids is not None:
-                print(f'[ClsDataAugmentation: train] Sampling channels: {band_ids}')
-                self.transforms.append(chn_sample)
-            elif target_chn_ids is not None:
-                print(f'[ClsDataAugmentation: train] Simulating channels: {target_chn_ids}')
-                self.transforms.append(chn_sim)
-            else:
-                pass
-            
-            self.transforms.extend([rcrop, flipH, flipV])
-        else:
-            if band_ids is not None:
-                print(f'[ClsDataAugmentation: val/test] Sampling channels: {band_ids}')
-                self.transforms.append(chn_sample)
-            elif target_chn_ids is not None:
-                print(f'[ClsDataAugmentation: val/test] Simulating channels: {target_chn_ids}')
-                self.transforms.append(chn_sim)
-            else:
-                pass
-
-            self.transforms.append(r)
-
-        self.transform = torch.nn.Sequential(*self.transforms)
-
-    def get_chn_ids(self):
-        return self.output_chn_ids
-
-    @torch.no_grad()
-    def forward(self, x):
-        return self.transform(x)
-
-
 class FmowDataset(BaseDataset):
-    def __init__(self, config):
-        super().__init__(config)
-        self.return_rgb = config.get('return_rgb', False)
-        self.num_channels = config.get('num_channels', 4)
+    def __init__(self, 
+            root_dir: str,
+            split: str,
+            keep_sensors: list = None,
+            transform = None,
+            **kwargs
+        ):
+        super().__init__('FmowDataset', **kwargs)
+        num_channels = len(self.chn_ids) if self.band_ids is None else len(self.band_ids)
 
+        self.dataset = FmowBenchmarkDataset(
+            root=root_dir, 
+            split=split, 
+            transforms=transform, 
+            keep_sensors=keep_sensors,
+            num_channels=num_channels, 
+            normalize=True
+        )
+
+    def _getitem(self, idx):
+        return self.dataset[idx]
     
-    def create_dataset(self):
-        train_transform = ClsDataAugmentation(split="train", size=self.img_size, band_ids=self.band_ids, source_chn_ids=self.source_chn_ids, target_chn_ids=self.target_chn_ids)
-        eval_transform = ClsDataAugmentation(split="test", size=self.img_size, band_ids=self.band_ids, source_chn_ids=self.source_chn_ids, target_chn_ids=self.target_chn_ids)
-
-
-        # Override the config with the transformed channel ids
-        output_chn_ids = train_transform.get_chn_ids() #provides the updated channel ids after augmentation
-        if output_chn_ids is not None:
-            self.config['wavelengths_mean_nm'] = output_chn_ids[:,0].tolist()
-            self.config['wavelengths_sigma_nm'] = output_chn_ids[:,1].tolist()
-
-        dataset_train = FmowBenchmarkDataset(
-            root=self.root_dir, split="train", transforms=train_transform, keep_sensors=self.keep_sensors, return_rgb=self.return_rgb, num_channels=self.num_channels, normalize=True
-        )
-        dataset_val = FmowBenchmarkDataset(
-            root=self.root_dir, split="val", transforms=eval_transform, keep_sensors=self.keep_sensors, return_rgb=self.return_rgb, num_channels=self.num_channels, normalize=True
-        )
-        dataset_test = FmowBenchmarkDataset(
-            root=self.root_dir, split="test", transforms=eval_transform, keep_sensors=self.keep_sensors, return_rgb=self.return_rgb, num_channels=self.num_channels, normalize=True
-        )
-
-        return dataset_train, dataset_val, dataset_test
+    def _len(self):
+        return len(self.dataset)

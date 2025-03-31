@@ -19,9 +19,10 @@ from fvcore.common.checkpoint import Checkpointer, PeriodicCheckpointer
 from .utils.logger import MetricLogger, update_linear_probe_metrics, BestValCheckpointer
 from .utils.utils import evaluate, blocks_to_cls, remove_ddp_wrapper
 from .utils.data import make_data_loader, SamplerType
-from .utils.metrics import build_metric, build_criterion, build_optimizer
+from .utils.metrics import build_metric
 from .utils import distributed
 from geobreeze.engine.model import EvalModelWrapper
+from geobreeze.factory import make_criterion, make_optimizer
 
 import time
 import math
@@ -271,7 +272,7 @@ def eval_linear(
     logger.info("Starting training from iteration {}".format(start_iter))
     metric_logger = MetricLogger(delimiter="  ", output_dir=output_dir, output_file='training_metrics.json')
     header = "Training"
-    criterion = build_criterion(criterion_cfg)
+    criterion = make_criterion(criterion_cfg)
     all_metrics_results_dict = None
 
     for data, labels in metric_logger.log_every(
@@ -282,7 +283,12 @@ def eval_linear(
         iteration,
         epoch_len = iter_per_epoch,
     ):
-        data = data.cuda(non_blocking=True)
+        if isinstance(data, dict):
+            for k, v in data.items():
+                if isinstance(v, torch.Tensor):
+                    data[k] = v.cuda(non_blocking=True)
+        else:
+            data = data.cuda(non_blocking=True)
         labels = labels.cuda(non_blocking=True)
 
         features = feature_model(data)
@@ -351,6 +357,7 @@ def test_on_datasets(
     iteration,
     best_classifier_on_val,
     test_class_mappings=[None],
+    batchwise_spectral_subsampling = False,
 ):
     results_list = []
     all_metrics_out = {}
@@ -361,7 +368,8 @@ def test_on_datasets(
             dataset=test_dataset,
             batch_size=batch_size,
             num_workers=num_workers,
-            sampler_type=SamplerType.EPOCH,)
+            sampler_type=SamplerType.EPOCH,
+            batchwise_spectral_subsampling=batchwise_spectral_subsampling,)
 
         metrics_result_list, all_metrics_results_dict = evaluate_linear_classifiers(
             feature_model,
@@ -413,8 +421,13 @@ def run_eval_linear(
     classifier_fpath=None,
     val_class_mapping_fpath=None,
     test_class_mapping_fpaths=[None],
-    seed = 21
+    seed = 21,
+
+    batchwise_spectral_subsampling = {'train': False, 'val': False, 'test': False},
 ):
+
+    if any(batchwise_spectral_subsampling.values()):
+        assert distributed.get_global_size() == 1, "Batchwise spectral subsampling only supported on single GPU"
 
     if test_metrics_list is None:
         test_metrics_list = [val_metrics] * len(test_dataset_lists)
@@ -444,10 +457,10 @@ def run_eval_linear(
 
     # classifiers
 
-    # assert isinstance(model, EvalModelWrapper)
     feature_model = FeatureModel(model)
     x = next(iter(train_dataset))[0]
-    x = x.unsqueeze(0).cuda()
+    x['imgs'] = x['imgs'].unsqueeze(0)
+    x = {k: v.cuda() for k, v in x.items()}
     sample_output = feature_model(x)
 
     linear_classifiers, optim_param_groups = setup_linear_classifiers(
@@ -462,7 +475,7 @@ def run_eval_linear(
         use_additional_1dbatchnorm_list = heads_cfg.use_additional_1dbatchnorm_list
     )
     
-    optimizer = build_optimizer(optim_param_groups, optim_cfg)
+    optimizer = make_optimizer(optim_cfg, params=optim_param_groups)
 
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, max_iter, eta_min=0)
@@ -478,7 +491,8 @@ def run_eval_linear(
         persistent_workers=dl_cfg.get('persistent_workers', True),
         seed=seed,
         sampler_type=SamplerType.INFINITE,
-        sampler_advance = start_iter
+        sampler_advance = start_iter,
+        batchwise_spectral_subsampling = batchwise_spectral_subsampling['train'],
     )
     val_data_loader = make_data_loader(
         val_dataset, 
@@ -488,6 +502,7 @@ def run_eval_linear(
         persistent_workers = dl_cfg.get('persistent_workers', True),
         seed = seed,
         sampler_type=SamplerType.EPOCH,
+        batchwise_spectral_subsampling = batchwise_spectral_subsampling['val'],
     )
 
 
@@ -542,7 +557,9 @@ def run_eval_linear(
             training_num_classes,
             iteration,
             best_classifier_str,
-            test_class_mappings=test_class_mappings,)
+            test_class_mappings=test_class_mappings,
+            batchwise_spectral_subsampling = batchwise_spectral_subsampling['test'],
+            )
         
         for ds_id, cls_metric_dict in test_all_metrics_out.items():
             update_linear_probe_metrics(output_dir, cls_metric_dict, prefix=f'test_{ds_id}')
