@@ -7,16 +7,8 @@ from torch import Tensor
 
 class DinoV2(EvalModelWrapper):
 
-    def __init__(self, 
-            dinov2_torchhub_id: str,
-            **kwargs
-        ):
-        super().__init__(**kwargs)
-        self.dinov2_torchhub_id = dinov2_torchhub_id
-
-    def _load_encoder(self, blk_indices):
-        print("BLK INDICES: ", blk_indices)
-        self.encoder = torch.hub.load("facebookresearch/dinov2", self.dinov2_torchhub_id)
+    def _load_encoder(self, blk_indices, torchhub_id):
+        self.encoder = torch.hub.load("facebookresearch/dinov2", torchhub_id)
         self.norm = self.encoder.norm
         self.blk_indices = blk_indices
 

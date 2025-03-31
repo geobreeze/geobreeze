@@ -9,6 +9,6 @@ n_per_class_list: [-1]
 n_tries: 1
 
 args_defining_run:
-  task.nb_knn: k
-  task.temperature_list: T
-  task.normmode_list: norm
+  optim.nb_knn: k
+  optim.temperature_list: T
+  optim.normmode_list: norm

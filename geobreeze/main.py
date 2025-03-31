@@ -56,27 +56,35 @@ def process_config(cfg):
     # print(OmegaConf.to_yaml(task_cfg))
     # cfg = OmegaConf.merge(task_cfg, cfg)
 
-    # optim defaults
+    # training mode preparation
     training_mode = cfg.optim.mode
-    if training_mode in ['knn','linear_probe']:
-        # if training_mode == 'linear_probe':
-        #     f = 'linear_probe.yaml'
-        # else:
-        #     f = 'knn.yaml'
-        # defaults = OmegaConf.load(os.path.join(default_config_dir, f))
-        # defaults = OmegaConf.create(dict(optim=defaults))
-        # cfg = OmegaConf.merge(defaults, cfg)
+    if training_mode == 'knn':
         assert cfg.num_gpus == 1, 'accelerated only supports single gpu for now'
+        blks = 'default_cls'
+
+    elif training_mode == 'linear_probe':
+        assert cfg.num_gpus == 1, 'accelerated only supports single gpu for now'
+        blks = 'linear_probe'
 
     elif training_mode == 'finetune':
-        # defaults = OmegaConf.load(os.path.join(default_config_dir, 'finetune.yaml'))
-        # defaults = OmegaConf.create(dict(optim=defaults))
-        # cfg = OmegaConf.merge(defaults, cfg)
 
         with open_dict(cfg):
             cfg.optim.lr = cfg.optim.base_lr * cfg.dl.batch_size / 256 * cfg.num_gpus
             # logger.info(f'Scaled learning rate from {cfg.optim.base_lr} to {cfg.optim.lr} (bsz={cfg.dl.batch_size}, num_gpus={cfg.num_gpus})')
 
+        blks = 'segm' if cfg.data.task.id == 'segmentation' else 'default_cls'
+
+    else:
+        raise ValueError(f'Unknown training_mode: {training_mode}')
+    
+    # set blocks
+    all_blks = set(cfg.model.blk_indices.keys())
+    with open_dict(cfg):
+        assert blks in all_blks
+        cfg.model.blk_indices = cfg.model.blk_indices[blks]
+        all_blks.remove(blks)
+        for blk in all_blks:
+            cfg.model.pop(blk, None)
 
     # setup output dir
     experiment_name = os.path.relpath(cfg.output_dir, os.environ['ODIR'])
@@ -138,7 +146,7 @@ def get_num_classes(datasets):
     return ds.num_classes
 
 def do_knn(cfg, model: EvalModelWrapper, datasets: dict):
-    model.load_encoder(cfg.model.default_cls_blk_indices)
+    # model.load_encoder(cfg.model.default_cls_blk_indices)
 
     results_list = eval_knn_with_model(
         model,
@@ -160,7 +168,7 @@ def do_linear_probe(cfg, model: EvalModelWrapper, datasets: dict):
     experiment_name = cfg.experiment_name
     run_name = cfg.run_name
 
-    model.load_encoder(model.accel_cls_blk_indices)
+    # model.load_encoder(model.accel_cls_blk_indices)
 
     heads_cfg = OmegaConf.create(dict(
         n_last_blocks_list = cfg.optim.n_last_blocks_list,
@@ -254,10 +262,10 @@ def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
     num_classes = get_num_classes(datasets)
 
     if task in ['classification','regression']:
-        model.load_encoder(model.default_cls_blk_indices)
+        # model.load_encoder(model.default_cls_blk_indices)
         pl_task = LightningClsRegTask(cfg, model, num_classes)
     elif task == 'segmentation':
-        model.load_encoder(model.segm_blk_indices)
+        # model.load_encoder(model.segm_blk_indices)
         pl_task = LightningSegmentationTask(cfg, model, num_classes)
     else:
         raise NotImplementedError()

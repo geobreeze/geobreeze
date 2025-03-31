@@ -1,10 +1,11 @@
-_target_: geobreeze.models.panopticon.Panopticon
+_target_: geobreeze.models.dofa.Dofa
 
-torchhub_id: panopticon_vitb14
+size: base
+hf_filename: DOFA_ViT_base_e100.pth
 
 image_resolution: 224
 embed_dim: 768
-patch_size: 14
+patch_size: 16
 
 blk_indices:
   segm: [3, 5, 7, 11]

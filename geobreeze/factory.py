@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 
 import kornia.augmentation as K
+import kornia
 
 
 def instantiate(cfg, mode='eval', **kwargs):
@@ -21,7 +22,7 @@ def instantiate(cfg, mode='eval', **kwargs):
         assert _class in globals(), f'Class {_class} not found in globals.'
         return globals()[_class](**cfg, **kwargs)
     elif mode == 'hydra':
-        return hydra.utils.call(cfg, **kwargs)
+        return hydra.utils.instantiate(cfg, **kwargs)
     elif mode == 'eval':
         cfg = deepcopy(cfg)
         return eval(cfg.pop('_target_'))(**cfg, **kwargs)
@@ -45,7 +46,7 @@ def make_transform_list(cfg_list, **kwargs):
     transform_list = []
     for cfg in cfg_list: 
         print(cfg)
-        trf = instantiate(cfg)
+        trf = instantiate(cfg, mode='hydra')
         transform_list.append(trf)
     return transform_list
 

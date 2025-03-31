@@ -41,12 +41,6 @@ def collect_csv(output_dir, return_df='relpath', sleep=0.05):
                 df['relpath'] = df['relpath'].apply(lambda x: os.path.normpath(os.path.join(d,x)))
                 dfs.append(df)
             df = pd.concat(dfs).reset_index(drop=True)
-
-            df.to_csv(os.path.join(abspath, 'results.csv'))
-            with open(os.path.join(abspath, 'results.txt'),'w+') as f:
-                df_print = add_lvl(df.copy()).drop(columns=['relpath'])
-                f.write(df_print.to_string())
-
             return (os.path.basename(abspath), df)
                 
     t = rec(output_dir)
@@ -55,6 +49,11 @@ def collect_csv(output_dir, return_df='relpath', sleep=0.05):
     else:
         df = t[1]
     
+    df.to_csv(os.path.join(output_dir, 'results.csv'))
+    with open(os.path.join(output_dir, 'results.txt'),'w+') as f:
+        df_print = add_lvl(df.copy()).drop(columns=['relpath'])
+        f.write(df_print.to_string())
+
     if return_df == 'lvl':
         return add_lvl(df).drop(columns=['relpath'])
     elif return_df == 'relpath':

@@ -13,30 +13,21 @@ from einops import rearrange
 class Dofa(EvalModelWrapper):
     URL = "https://huggingface.co/earthflow/dofa/resolve/main/{}"
 
-    def _load_encoder(self, blk_indices):
+    def _load_encoder(self, blk_indices, size, hf_filename):
 
         # build encoder
-        size = self.model_config.size
         if size == "base":
+            assert self.patch_size == 16
             encoder = vit_base_patch16_cls()
         elif size == "large":
+            assert self.patch_size == 16
             encoder = vit_large_patch16_cls()
         else:
             raise ValueError(f"Size {size} not supported for DOFA")
 
-        # download weights
-        if self.model_config.get("pretrained_path", None):
-            path = self.model_config.pretrained_path
-            if not os.path.exists(path):
-                # download the weights from HF
-                download_url(
-                    self.URL.format(os.path.basename(path)),
-                    os.path.dirname(path),
-                    filename=os.path.basename(path),)
-
-        # load weights
-        check_point = torch.load(path, map_location="cpu")
-        encoder.load_state_dict(check_point, strict=False)
+        url = self.URL.format(hf_filename)
+        state_dict = torch.hub.load_state_dict_from_url(url, map_location="cpu")
+        encoder.load_state_dict(state_dict, strict=False)
         
         # assign variables
         self.encoder = encoder
@@ -49,23 +40,21 @@ class Dofa(EvalModelWrapper):
         for idx in blk_indices:
             self.encoder.blocks[idx].register_forward_hook(
                 lambda m, i, o: self._cache_block(o))
-            
-        # prepare wavelengths
-        wavelengths_mean_microns = []
-        for wl in self.data_config['wavelengths_mean_nm']:
-            if wl > 0:
-                wl = wl / 1e3
-            else:
-                wl = 5.6 # dofa uses 5600 nm for all SAR channels
-            wavelengths_mean_microns.append(wl)
-        self.wavelengths_mean_microns = wavelengths_mean_microns
+
+
+    def _process_chn_ids(self, chn_ids):
+        chn_ids[chn_ids > 0] = chn_ids[chn_ids > 0] / 1e3 # dofa uses microns
+        chn_ids[chn_ids < 0] = 5.6 # dofa uses 5600 nm for all SAR channels
+        return chn_ids
 
     def _cache_block(self,x):
         self.cache.append(x)
 
     def get_blocks(self, x_dict):
         self.cache = []
-        self.encoder(x_dict['imgs'], self.wavelengths_mean_microns)
+        chn_ids = self._process_chn_ids(x_dict['chn_ids'])
+        chn_ids = chn_ids[0] # same chn_ids for all images in batch
+        self.encoder(x_dict['imgs'], chn_ids)
         blocks = self.cache
         self.cache = [] 
         return blocks

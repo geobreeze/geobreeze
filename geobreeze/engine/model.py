@@ -1,5 +1,8 @@
 import torch.nn as nn
 from einops import rearrange 
+import logging
+
+logger = logging.getLogger('eval')
 
 """ 
 Design decisions:
@@ -16,10 +19,9 @@ class EvalModelWrapper(nn.Module):
     def __init__(self, 
             image_resolution: int,
             embed_dim: int,
-            segm_blk_indices = None,
-            accel_cls_blk_indices = None,
-            default_cls_blk_indices = None,
-            patch_size = None,
+            patch_size: int,
+            blk_indices: list,
+            **kwargs
         ):
         super().__init__()
         
@@ -27,15 +29,7 @@ class EvalModelWrapper(nn.Module):
         self.embed_dim = embed_dim
         self.patch_size = patch_size
 
-        if segm_blk_indices is not None:
-            self.segm_blk_indices = segm_blk_indices
-        if accel_cls_blk_indices is not None:
-            self.accel_cls_blk_indices = accel_cls_blk_indices
-        if default_cls_blk_indices is not None:
-            self.default_cls_blk_indices = default_cls_blk_indices
-
-    def load_encoder(self, blk_indices):
-        self._load_encoder(blk_indices)
+        self._load_encoder(blk_indices, **kwargs)
         assert hasattr(self, "encoder"), "Encoder has not been loaded!"
         assert hasattr(self, "norm"), "Normalization function has not been loaded!"
         print(f'Loaded encoder with blocks {blk_indices} blocks and norm {self.norm}')

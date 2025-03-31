@@ -4,28 +4,16 @@ from geobreeze.engine.model import EvalModelWrapper
 
 class Panopticon(EvalModelWrapper):
 
-    def _load_encoder(self, blk_indices):
+    def _load_encoder(self, blk_indices, torchhub_id):
         self.encoder = torch.hub.load(
             'panopticon-FM/panopticon',
-            'panopticon_vitb14',)
+            torchhub_id,)
         # self.encoder = torch.hub.load(
         #     '/home/hk-project-pai00028/tum_mhj8661/code/PanOpticOn',
         #     'panopticon_vitb14',
         #     source='local')
         self.norm = self.encoder.norm
         self.blk_indices = blk_indices
-
-        # wavelengths = self.data_config.wavelengths_mean_nm
-        # sigmas = self.data_config.get('wavelengths_sigma_nm', None)
-
-        # if not self.model_config.get('full_spectra', False) and sigmas is not None:
-        #     self.register_buffer('chn_ids',
-        #         torch.tensor([wl for wl in wavelengths]).unsqueeze(0)) # (1, C)
-        # else:
-        #     print('Full Spectra Enabled')
-        #     self.register_buffer('chn_ids',
-        #         torch.tensor(list(zip(wavelengths, sigmas))).unsqueeze(0)) # (1, C, 2)
-        #     print(self.chn_ids, self.chn_ids.shape)
     
     def get_blocks(self, x_dict):
         chn_ids = x_dict['chn_ids']

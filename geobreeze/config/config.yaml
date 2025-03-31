@@ -39,42 +39,42 @@ _vars:
     cls:
 
       train:
-      - _target_: kornia.augmentations.RandomHorizontalFlip
+      - _target_: kornia.augmentation.RandomHorizontalFlip
         p: 0.5
         keepdim: true
-      - _target_: K.RandomVerticalFlip
+      - _target_: kornia.augmentation.RandomVerticalFlip
         p: 0.5
         keepdim: true
-      # - _target_: K.RandomResizedCrop
+      # - _target_: kornia.augmentation.RandomResizedCrop
       #   # size: ["${model.image_resolution}", "${model.image_resolution}"]
       #   scale: [0.8, 1.0]
       #   size: [224,224]
-      - _target_: K.Resize
+      - _target_: kornia.augmentation.Resize
         size: "${model.image_resolution}"
         keepdim: true
 
       val:
-      - _target_: K.Resize
+      - _target_: kornia.augmentation.Resize
         size: "${model.image_resolution}"
         keepdim: true
 
     segm:
       train:
-      - _target_: K.RandomHorizontalFlip
+      - _target_: kornia.augmentation.RandomHorizontalFlip
         p: 0.5
         keepdim: true
-      - _target_: K.RandomVerticalFlip
+      - _target_: kornia.augmentation.RandomVerticalFlip
         p: 0.5
         keepdim: true
-      # - _target_: K.RandomResizedCrop
+      # - _target_: kornia.augmentation.RandomResizedCrop
       #   # size: ["${model.image_resolution}", "${model.image_resolution}"]
       #   scale: [0.8, 1.0]
       #   size: [224,224]
-      - _target_: K.Resize
+      - _target_: kornia.augmentation.Resize
         size: "${model.image_resolution}"
         keepdim: true
 
       val:
-      - _target_: K.Resize
+      - _target_: kornia.augmentation.Resize
         size: "${model.image_resolution}"
         keepdim: true
