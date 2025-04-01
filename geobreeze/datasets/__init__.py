@@ -1,5 +1,6 @@
 from .fmow import FmowDataset
 from .geobench import GeoBenchDataset
+from .resisc45 import Resisc45
 
 # from geobreeze.datasets.geobench_wrapper import GeoBenchDataset
 # from geobreeze.datasets.resisc_wrapper import Resics45Dataset

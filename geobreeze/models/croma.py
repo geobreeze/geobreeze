@@ -11,27 +11,29 @@ from geobreeze.engine.model import EvalModelWrapper
 class Croma(EvalModelWrapper):
     URL = "https://huggingface.co/antofuller/CROMA/resolve/main/{}"
 
-    def _load_encoder(self, blk_indices):
-        model_config = self.model_config
+    def _load_encoder(self, 
+            blk_indices,
+            modality,
+            hf_filename, 
+            size
+        ):
 
-        if model_config.get("pretrained_path", None):
-            path = model_config.pretrained_path
-            if not os.path.exists(path):
-                # download the weights from HF
-                download_url(
-                    self.URL.format(os.path.basename(path)),
-                    os.path.dirname(path),
-                    filename=os.path.basename(path),
-                )
-        else:
-            path = None
+        self.modality = modality
+        ckpt_path = os.path.join(
+            os.environ['MODEL_WEIGHTS_DIR'], hf_filename)
 
-        modality = model_config.modality
+        if not os.path.exists(ckpt_path):
+            download_url(
+                self.URL.format(hf_filename),
+                root = os.environ['MODEL_WEIGHTS_DIR'],
+                filename = hf_filename,
+            )
+
         encoder = PretrainedCROMA(
-            pretrained_path=path,
-            size=model_config.size,
+            pretrained_path=ckpt_path,
+            size=size,
             modality=modality,
-            image_resolution=model_config.image_resolution,)
+            image_resolution=self.image_resolution,)
 
         if modality == "optical":
             self.norm = encoder.s2_encoder.transformer.norm_out 
@@ -47,7 +49,7 @@ class Croma(EvalModelWrapper):
     
 
     def get_blocks(self, x_dict):
-        mod = self.model_config.modality
+        mod = self.modality
         out = self.encoder(**{f"{mod}_images": x_dict['imgs']})
         out_features = out['out_feats']
 
@@ -65,10 +67,10 @@ class Croma(EvalModelWrapper):
 
     def get_segm_blks(self, x_dict: Tensor) -> list[torch.Tensor]:
         """ need to overwrite because croma has no class token. """
-        return self.encoder(**{f"{self.model_config.modality}_images": x_dict})['out_feats']
+        return self.encoder(**{f"{self.modality}_images": x_dict})['out_feats']
     
     def replace_pe(self, num_channels):
-        mod = self.model_config.modality
+        mod = self.modality
         if mod == 'optical':
             enc = self.encoder.s2_encoder
         elif mod == 'SAR':
