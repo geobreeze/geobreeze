@@ -1,0 +1,24 @@
+train:
+  transform:
+  - _target_: kornia.augmentation.RandomHorizontalFlip
+    p: 0.5
+    keepdim: true
+  - _target_: kornia.augmentation.RandomVerticalFlip
+    p: 0.5
+    keepdim: true
+  # - _target_: kornia.augmentation.RandomResizedCrop
+  #   # size: ["${model.image_resolution}", "${model.image_resolution}"]
+  #   scale: [0.8, 1.0]
+  #   size: [224,224]
+
+val:
+  transform:
+  - _target_: kornia.augmentation.Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
+test:
+  transform:
+  - _target_: kornia.augmentation.Resize
+    size: "${model.image_resolution}"
+    keepdim: true

@@ -1,0 +1,31 @@
+
+
+train:
+  transform: 
+  - _target_: kornia.augmentation.Resize
+    size: -1
+    keepdim: true
+  - _target_: kornia.augmentation.Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
+val:
+  transform: 
+  - _target_: kornia.augmentation.Resize
+    size: -1
+    keepdim: true
+  - _target_: kornia.augmentation.Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
+
+test:
+  transform: 
+  - _target_: kornia.augmentation.Resize
+    size: -1
+    keepdim: true
+  - _target_: kornia.augmentation.Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
+

@@ -1,0 +1,42 @@
+defaults:
+- task/cls
+
+
+train:
+  _target_: GeoBenchDataset
+  ds_name: m-eurosat
+  split: train
+  transform: 
+  - _target_: kornia.augmentation.Resize
+    size: -1
+    keepdim: true
+  - _target_: kornia.augmentation.Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
+val:
+  _target_: GeoBenchDataset
+  ds_name: m-eurosat
+  split: val
+  transform: 
+  - _target_: kornia.augmentation.Resize
+    size: -1
+    keepdim: true
+  - _target_: kornia.augmentation.Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
+
+test:
+  _target_: GeoBenchDataset
+  ds_name: m-eurosat
+  split: test
+  transform: 
+  - _target_: kornia.augmentation.Resize
+    size: -1
+    keepdim: true
+  - _target_: kornia.augmentation.Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
+

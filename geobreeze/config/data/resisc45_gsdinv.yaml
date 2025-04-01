@@ -1,0 +1,37 @@
+defaults:
+- task/cls
+
+
+train:
+  _target_: Resisc45
+  split: train
+  transform: 
+  - _target_: kornia.augmentation.Resize
+    size: -1
+    keepdim: true
+  - _target_: kornia.augmentation.Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
+val:
+  _target_: Resisc45
+  split: val
+  transform: 
+  - _target_: kornia.augmentation.Resize
+    size: -1
+    keepdim: true
+  - _target_: kornia.augmentation.Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
+test:
+  _target_: Resisc45
+  split: test
+  transform: 
+  - _target_: kornia.augmentation.Resize
+    size: -1
+    keepdim: true
+  - _target_: kornia.augmentation.Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
