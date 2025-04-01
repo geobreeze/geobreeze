@@ -40,7 +40,8 @@ dependencies = [
     "peft>=0.14.0",
     "optuna",
     "tifffile",
-    "fvcore"
+    "fvcore",
+    "imagecodecs"
 ]
 
 [tool.pytest.ini_options]

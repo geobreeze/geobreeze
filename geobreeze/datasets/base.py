@@ -33,7 +33,7 @@ class BaseDataset(torch.utils.data.Dataset):
                       if old_k.startswith('bands.')}
         for new_k, old_k in band_keys.items():
             metainfo_bands[new_k] = torch.tensor(
-                [OmegaConf.select(band, old_k) for band in self.ds_config.bands])
+                [OmegaConf.select(band, old_k) or torch.nan for band in self.ds_config.bands])
         self.metainfo_bands = metainfo_bands
 
         sensor_keys = {new_k: old_k for new_k, old_k in metainfo.items() 
