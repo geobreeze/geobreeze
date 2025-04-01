@@ -49,14 +49,13 @@ class GeoBenchDataset(BaseDataset):
         self.band_names = band_names
         MEAN, STD = task.get_dataset(band_names=band_names).normalization_stats()
         self.normalize_trf = K.augmentation.Normalize(mean=MEAN, std=STD, keepdim=True)
+        self.normalize = normalize
 
         data_keys = ['input'] if self.is_cls else ['input', 'mask']
         self.transform = K.augmentation.AugmentationSequential(
             *transform_list, 
             data_keys=data_keys
         )    
-
-        self.normalize = normalize
 
         self.dataset = task.get_dataset(
             split=split,

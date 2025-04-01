@@ -21,23 +21,6 @@ class ChannelSampler(torch.nn.Module):
     def __call__(self, x):
         return x[self.band_ids]
 
-class Downsample(torch.nn.Module):
-    def __init__(self, scale: float):
-        super().__init__()
-        self.scale = scale
-
-    def __call__(self, x):
-        
-        h, w = x.shape[-2], x.shape[-1]
-        h2, w2 = int(h*self.scale), int(w*self.scale)
-
-        #first downsample the image by the scale factor, then upsample to the original size
-        x = K.Resize(size=(h2, w2), align_corners=True)(x)
-        x = K.Resize(size=(h, w), align_corners=True)(x)
-        assert x.shape[-2] == h and x.shape[-1] == w, f'Downsample failed: {x.shape[1]} != {h} or {x.shape[2]} != {w}'
-        return x
-
-
 
 class ChannelSimulator(torch.nn.Module):
     def __init__(self,
@@ -219,12 +202,16 @@ def load_ds_cfg(ds_name):
     chn_props = []
     sat_cfgs = {}
     for b in ds_cfg['bands']:
-        sat_id, band_id = b['id'].split('/')
-        if sat_id not in sat_cfgs: # lazy loading
-            sat_cfgs[sat_id] = read_yaml(sats[sat_id])
-        band_cfg = deepcopy(sat_cfgs[sat_id]['bands'][band_id])
-        band_cfg.update(**b) # overwrite sensor values & add id
+        band_cfg = {}
+        if 'id' in b: # get default values from sensor
+            sat_id, band_id = b['id'].split('/')
+            if sat_id not in sat_cfgs: # lazy loading
+                sat_cfgs[sat_id] = read_yaml(sats[sat_id])
+            band_cfg.update(**sat_cfgs[sat_id]['bands'][band_id])
+
+        band_cfg.update(**b) # update values specified in dataset config
         chn_props.append(band_cfg)
+
     metainfo = {k:v for k,v in ds_cfg.items() if k != 'bands'}
     return {'ds_name': ds_name, 'bands': chn_props, 'metainfo': metainfo}
 

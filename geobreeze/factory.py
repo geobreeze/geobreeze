@@ -37,6 +37,7 @@ def make_dataset(cfg, seed=21, **kwargs):
 
     subset = cfg.pop('subset', -1)
     ds = datasets.__dict__[cfg.pop('_target_')](**cfg, transform_list=transform_list, **kwargs)
+    # ds = instantiate(cfg, mode='hydra', transform_list=transform_list, **kwargs)
     ds = make_subset(ds, subset, seed=seed)
 
     return ds

@@ -1,0 +1,33 @@
+task: classification
+num_classes: 45
+multilabel: false
+
+image_resolution: 224
+
+bands:
+- name: Red
+  gaussian:
+    mu: 665.0
+    sigma: 16.0 # unknown
+- name: Green
+  gaussian:
+    mu: 560.0
+    sigma: 16.0 # unknown
+- name: Blue
+  gaussian:
+    mu: 490.0
+    sigma: 16.0 # unknown
+
+
+# gsd: varies between images
+
+data_path: ${oc.env:DATASETS_DIR}/resisc45
+
+
+#hacky defaults
+# band_gsds: [10, 10, 10]
+# senpamae_channels:
+#   - 3
+#   - 2
+#   - 1
+# senpamae_srf_name: rfs_sentinel2_a_13b.npy

@@ -33,29 +33,6 @@ logger = logging.getLogger('eval')
 
 def process_config(cfg):
 
-    # process datasets
-    # if '_target_' in cfg.data:
-    #     # logger.info('Copying given dataset to all of train/val/test splits')
-    #     ds_cfg = deepcopy(cfg.data)
-    #     with open_dict(ds_cfg):
-    #         ds_cfg.pop('data')
-    #         ds_cfg.data = dict(train=ds_cfg, val=ds_cfg, test=ds_cfg)
-
-    # os.environ['CDIR'] = os.path.join(os.environ['REPO_PATH'], 'geobreeze/configs/')
-    # default_config_dir = os.path.join(os.environ['REPO_PATH'], 'geobreeze/configs/task_defaults/')
-
-    # process metrics
-    # task_id = cfg.data.task
-    # task_kwargs = OmegaConf.load(os.path.join(default_config_dir, 'metrics_and_criterion.yaml'))
-    # key = task_id
-    # if cfg.data.get('is_multilabel', False):
-    #     key = f'multilabel_{key}'
-    # task_kwargs = task_kwargs[key]
-    # task_cfg = OmegaConf.create(dict(task=task_kwargs))
-    # print('------------- TASK')
-    # print(OmegaConf.to_yaml(task_cfg))
-    # cfg = OmegaConf.merge(task_cfg, cfg)
-
     # training mode preparation
     training_mode = cfg.optim.mode
     if training_mode == 'knn':
