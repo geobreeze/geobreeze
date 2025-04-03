@@ -32,11 +32,11 @@ class Resisc45(BaseDataset):
         self.normalize_trf = K.augmentation.AugmentationSequential(
             K.augmentation.Normalize(mean=0, std=255, keepdim=True),
             K.augmentation.Normalize(mean=MEAN, std=STD, keepdim=True),
-            data_keys=['input'])
+            data_keys=['image'])
         self.normalize = normalize
 
         self.transform = K.augmentation.AugmentationSequential(
-            *transform_list, data_keys=['input'])
+            *transform_list, data_keys=['image'])
 
     def _getitem(self, idx):
         x_dict = self.dataset[idx]

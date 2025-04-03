@@ -1,0 +1,20 @@
+defaults:
+- task/cls
+
+train:
+  _target_: EurosatSAR
+  root: /hkfs/work/workspace/scratch/tum_mhj8661-panopticon/datasets/eurosat_SAR
+  split: train
+  transform: ${_vars.augm.cls.train}
+
+val:
+  _target_: EurosatSAR
+  root: /hkfs/work/workspace/scratch/tum_mhj8661-panopticon/datasets/eurosat_SAR
+  split: val
+  transform: ${_vars.augm.cls.val}
+
+test:
+  _target_: EurosatSAR
+  root: /hkfs/work/workspace/scratch/tum_mhj8661-panopticon/datasets/eurosat_SAR
+  split: test
+  transform: ${_vars.augm.cls.val}

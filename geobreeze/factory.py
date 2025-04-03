@@ -13,6 +13,7 @@ import torch.nn as nn
 
 import kornia.augmentation as K
 import kornia
+from omegaconf import ListConfig, OmegaConf
 
 
 def instantiate(cfg, mode='eval', **kwargs):
@@ -32,6 +33,9 @@ def instantiate(cfg, mode='eval', **kwargs):
 def make_dataset(cfg, seed=21, **kwargs):
     cfg = deepcopy(cfg)
 
+    if isinstance(cfg, list) or isinstance(cfg, ListConfig):
+        return [make_dataset(c, seed=seed, **kwargs) for c in cfg]
+
     trf_cfg = cfg.pop('transform', [])
     transform_list = make_transform_list(trf_cfg)
 
@@ -46,8 +50,12 @@ def make_transform_list(cfg_list, **kwargs):
     """ kwargs can be called by the configs, e.g. size"""
     transform_list = []
     for cfg in cfg_list: 
-        print(cfg)
-        trf = instantiate(cfg, mode='hydra')
+        cfg = deepcopy(cfg)
+        cfg = OmegaConf.to_container(cfg, resolve=True)
+        # for k,v in cfg.items():
+        #     print(f'cfg: {k}: {type(v)}, {v}')
+        # trf = instantiate(cfg, mode='hydra')
+        trf = kornia.augmentation.__dict__[cfg.pop('_target_')](**cfg, **kwargs)
         transform_list.append(trf)
     return transform_list
 

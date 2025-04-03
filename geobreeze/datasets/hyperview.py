@@ -1,20 +1,13 @@
-import glob
 import os
-from typing import Any
 
 import kornia.augmentation as K
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn.functional as F
 from torch import Tensor
-from torchgeo.datamodules.geo import NonGeoDataModule
 from torchgeo.datasets.geo import NonGeoDataset
-from torchgeo.samplers.utils import _to_tuple
-from torchgeo.transforms import AugmentationSequential
 from typing import Optional, Callable
-from .utils.utils import ChannelSampler, ChannelSimulator, extract_wavemus, load_ds_cfg, MaskTensor
 from torchvision import transforms
 from .base import BaseDataset
 import kornia.augmentation as K
@@ -281,7 +274,7 @@ class Hyperview(BaseDataset):
         super().__init__('hyperview', **kwargs)
 
         transform = K.AugmentationSequential(
-            *transform_list, data_keys=['input'])
+            *transform_list, data_keys=['image'])
 
         self.dataset = HyperviewBenchmark(
             root=root,

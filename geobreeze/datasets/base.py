@@ -32,8 +32,10 @@ class BaseDataset(torch.utils.data.Dataset):
         band_keys = {new_k: old_k[6:] for new_k, old_k in metainfo.items() 
                       if old_k.startswith('bands.')}
         for new_k, old_k in band_keys.items():
-            metainfo_bands[new_k] = torch.tensor(
-                [OmegaConf.select(band, old_k) or torch.nan for band in self.ds_config.bands])
+            data_list = [OmegaConf.select(band, old_k) or torch.nan 
+                         for band in self.ds_config.bands]
+            data_tensor = torch.tensor(data_list, dtype=torch.float32)
+            metainfo_bands[new_k] = data_tensor
         self.metainfo_bands = metainfo_bands
 
         sensor_keys = {new_k: old_k for new_k, old_k in metainfo.items() 
@@ -53,7 +55,7 @@ class BaseDataset(torch.utils.data.Dataset):
             k: v[band_ids] for k, v in self.metainfo_bands.items()}
 
         # logger feedback
-        band_names = [self.ds_config['bands'][i]['name'] for i in band_ids]
+        band_names = [self.ds_config['bands'][i].get('name','_unknown_') for i in band_ids]
         band_names_str = ''.join([f'\n  {i:03d}: {name}' for i, name in enumerate(band_names)])
         n_all_bands = len(self.ds_config['bands'])
         n_subsampled_bands = len(band_ids)

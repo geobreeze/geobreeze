@@ -385,6 +385,8 @@ def test_on_datasets(
         )
 
         for result_dict in metrics_result_list:
+            if len(test_dataset_lists) > 1:
+                result_dict['metric_str'] = f"{result_dict['metric_str']}_{ds_id}"
             results_list.append(result_dict)
 
         all_metrics_out[ds_id] = all_metrics_results_dict
@@ -459,8 +461,8 @@ def run_eval_linear(
 
     feature_model = FeatureModel(model)
     x = next(iter(train_dataset))[0]
-    x['imgs'] = x['imgs'].unsqueeze(0)
     x = {k: v.cuda() for k, v in x.items()}
+    x = {k: v.unsqueeze(0) for k,v in x.items() if isinstance(v, torch.Tensor)}
     sample_output = feature_model(x)
 
     linear_classifiers, optim_param_groups = setup_linear_classifiers(

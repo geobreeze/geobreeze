@@ -147,6 +147,7 @@ class ChannelSimulator(torch.nn.Module):
         out_img = torch.stack(out_chns, dim=0)
         return out_img #, out_chn_ids
     
+    
 class MaskTensor(torch.nn.Module): #for HyperviewDataset
     def __init__(self, mask: bool = True, mask_value: float = 0.):
         super().__init__()
@@ -205,6 +206,7 @@ def load_ds_cfg(ds_name):
         band_cfg = {}
         if 'id' in b: # get default values from sensor
             sat_id, band_id = b['id'].split('/')
+            band_cfg['name'] = band_id # default name
             if sat_id not in sat_cfgs: # lazy loading
                 sat_cfgs[sat_id] = read_yaml(sats[sat_id])
             band_cfg.update(**sat_cfgs[sat_id]['bands'][band_id])

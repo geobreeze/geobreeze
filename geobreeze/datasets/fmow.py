@@ -236,7 +236,7 @@ class FmowDataset(BaseDataset):
         super().__init__('FmowDataset', **kwargs)
         num_channels = len(self.chn_ids) if self.band_ids is None else len(self.band_ids)
 
-        transform = K.AugmentationSequential(*transform_list, data_keys=['input'])
+        transform = K.AugmentationSequential(*transform_list, data_keys=['image'])
 
         self.dataset = FmowBenchmarkDataset(
             root=root_dir, 

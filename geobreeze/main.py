@@ -5,7 +5,6 @@ import warnings
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 from lightning.pytorch.loggers import MLFlowLogger, WandbLogger
 from lightning import Trainer
-from lightning.pytorch.strategies import DDPStrategy
 import torch
 from lightning.pytorch import seed_everything
 from omegaconf import open_dict
@@ -123,7 +122,6 @@ def get_num_classes(datasets):
     return ds.num_classes
 
 def do_knn(cfg, model: EvalModelWrapper, datasets: dict):
-    # model.load_encoder(cfg.model.default_cls_blk_indices)
 
     results_list = eval_knn_with_model(
         model,
@@ -145,8 +143,6 @@ def do_linear_probe(cfg, model: EvalModelWrapper, datasets: dict):
     experiment_name = cfg.experiment_name
     run_name = cfg.run_name
 
-    # model.load_encoder(model.accel_cls_blk_indices)
-
     heads_cfg = OmegaConf.create(dict(
         n_last_blocks_list = cfg.optim.n_last_blocks_list,
         pooling = cfg.optim.pooling,
@@ -154,12 +150,16 @@ def do_linear_probe(cfg, model: EvalModelWrapper, datasets: dict):
         use_additional_1dbatchnorm_list = cfg.optim.use_additional_1dbatchnorm_list,
     ))
 
+    test_datasets = datasets['test']
+    if not isinstance(test_datasets, list):
+        test_datasets = [test_datasets]
+
     results_list = run_eval_linear(
         model,
         cfg.output_dir,
         datasets['train'],
         datasets['val'],
-        [datasets['test']],
+        test_datasets,
         get_num_classes(datasets),
         cfg.dl,
         heads_cfg,
@@ -232,6 +232,7 @@ def do_linear_probe(cfg, model: EvalModelWrapper, datasets: dict):
     return pd.DataFrame(results_list)
 
 def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
+    assert not isinstance(datasets['test'], list), 'Finetune does not support multiple test datasets'
 
     task = cfg.data.task.id
     experiment_name = cfg.experiment_name

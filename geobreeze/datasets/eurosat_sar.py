@@ -32,22 +32,22 @@ class EurosatSAR(BaseDataset):
 
 
     def __init__(self, 
-            root, 
             split,
+            root = None, 
             normalize = True, 
             transform_list = [],
             norm_mode = 'standardize',
             **kwargs
         ):
         super().__init__('eurosat-sar', **kwargs)
-        self.root = root
+        self.root = root or os.path.join(os.environ['DATASETS_DIR'], 'eurosat_SAR')
 
         self.df = pd.concat([pd.read_csv(os.path.join(root, f'{s}.csv')) 
                              for s in split.split(',')], ignore_index=True)
         self.df['class_idx'] = self.df['class_name'].map(self.class_to_idx)
 
         self.transform = K.AugmentationSequential(
-            *transform_list, data_keys=['input'],
+            *transform_list, data_keys=['image'],
         )
 
         self.normalize = normalize
