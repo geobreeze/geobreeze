@@ -204,11 +204,14 @@ def load_ds_cfg(ds_name):
     sat_cfgs = {}
     for b in ds_cfg['bands']:
         band_cfg = {}
-        if 'id' in b: # get default values from sensor
+
+        # get default values from sensor
+        if 'id' in b: 
             sat_id, band_id = b['id'].split('/')
-            band_cfg['name'] = band_id # default name
             if sat_id not in sat_cfgs: # lazy loading
                 sat_cfgs[sat_id] = read_yaml(sats[sat_id])
+            band_cfg.update(**{k: v for k,v in sat_cfgs[sat_id].items() if k != 'bands'})
+            band_cfg['name'] = band_id # default name
             band_cfg.update(**sat_cfgs[sat_id]['bands'][band_id])
 
         band_cfg.update(**b) # update values specified in dataset config

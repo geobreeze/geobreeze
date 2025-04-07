@@ -23,6 +23,7 @@ from .utils.metrics import build_metric
 from .utils import distributed
 from geobreeze.engine.model import EvalModelWrapper
 from geobreeze.factory import make_criterion, make_optimizer
+from geobreeze.datasets.base import collate_fn, batch_to_device
 
 import time
 import math
@@ -283,12 +284,7 @@ def eval_linear(
         iteration,
         epoch_len = iter_per_epoch,
     ):
-        if isinstance(data, dict):
-            for k, v in data.items():
-                if isinstance(v, torch.Tensor):
-                    data[k] = v.cuda(non_blocking=True)
-        else:
-            data = data.cuda(non_blocking=True)
+        data = batch_to_device(data, torch.cuda.current_device(), non_blocking=True)
         labels = labels.cuda(non_blocking=True)
 
         features = feature_model(data)
@@ -461,8 +457,8 @@ def run_eval_linear(
 
     feature_model = FeatureModel(model)
     x = next(iter(train_dataset))[0]
-    x = {k: v.cuda() for k, v in x.items()}
-    x = {k: v.unsqueeze(0) for k,v in x.items() if isinstance(v, torch.Tensor)}
+    x = collate_fn([x])
+    x = batch_to_device(x, torch.cuda.current_device())
     sample_output = feature_model(x)
 
     linear_classifiers, optim_param_groups = setup_linear_classifiers(

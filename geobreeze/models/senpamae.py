@@ -1,12 +1,12 @@
 from einops import rearrange
 import torch
 import os
-from torchvision.datasets.utils import download_url
-from peft import LoraConfig, get_peft_model
 from .SenPaMAE.model import vit_base_patch16
 import numpy as np
 from geobreeze.engine.model import EvalModelWrapper
 import logging
+from torch import Tensor
+import time
 
 logger = logging.getLogger()
 
@@ -16,27 +16,26 @@ class SenPaMAE(EvalModelWrapper):
     URL = "https://drive.google.com/file/d/1B2g1nm2oxKVgocW22nvEFkFellKZ6ATX"
     # url = 'https://drive.usercontent.google.com/download?id=16IoG47yzdyUnPqUgaV8ofeja5RgQjlAz&export=download&authuser=0&confirm=t&uuid=9e279667-af3a-4f3a-a648-bec3452a1450&at=AIrpjvMEDRsz82ufHQy8sUmSk5j5%3A1739180929862'
 
-    def _load_encoder(self, blk_indices):
-        model_config = self.model_config
-
-        # print(f"SenPaMAE: {self.data_config} | {self.data_config.num_channels}")
-
-        # assert self.data_config.num_channels is not None, "SenPaMAE: num_channels must be provided in the data_config"
+    def _load_encoder(self, 
+            blk_indices: list[int], 
+            pretrained_path: str,
+            srf_dir: str,
+            create_srf_from_mu_std: bool = False,
+        ):
+        self.srf_dir = srf_dir
+        self.create_srf_from_mu_std = create_srf_from_mu_std
 
         encoder = vit_base_patch16(
-            image_size=model_config.image_resolution,
-            num_channels=self.data_config.num_channels,
-            emb_dim=model_config.embed_dim,)
-        self.patch_size = 16
+            image_size=self.image_resolution,
+            num_channels=-1, # not needed
+            emb_dim=self.embed_dim,)
 
         # download weights
-        if model_config.get("pretrained_path", None):
-            path = model_config.pretrained_path
-            if not os.path.exists(path):
-                raise NotImplementedError('Need to manually download weights from above google drive link')
+        if not os.path.exists(pretrained_path):
+            raise NotImplementedError('Need to manually download weights from above google drive link')
 
         # load weights
-        ckpt = torch.load(path, map_location="cpu")
+        ckpt = torch.load(pretrained_path, map_location="cpu")
         encoder.load_state_dict(ckpt, strict=False)
 
         # register fwd hooks
@@ -47,76 +46,64 @@ class SenPaMAE(EvalModelWrapper):
         # set variables
         self.encoder = encoder
         self.norm = self.encoder.layer_norm
-
-        self.process_srfs()
+        self.srfs_loaded = {}
 
     def _cache_block(self,x):
         self.cache.append(x)
 
+    def _get_srf_gsds(self, x_dict, device):
+        """ srf_filename is list of length of band_ids (i.e. same on batch), 
+            gsd is of size (batch_size, C)"""
+        srf_filename_list = x_dict['srf_filename']
+        band_ids = x_dict['band_ids']
+        assert isinstance(srf_filename_list[0], str), \
+            f"SRF filename list must be a list of strings. {type(srf_filename_list[0])} != str"
+        assert len(srf_filename_list) == len(band_ids), \
+            f"SRF filename list and band ids must be the same length. {len(srf_filename_list)} != {len(band_ids)}"
 
-    def process_srfs(self):
-        # SRF loading
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        parent_dir = os.path.dirname(current_dir)  # Go up one level
+        srfs = []
+        for i, f in enumerate(srf_filename_list):
+            if not f in self.srfs_loaded:
+                srf_path = os.path.join(self.srf_dir, f,)
+                if os.path.exists(srf_path):
+                    srf = np.load(srf_path).T
+                    srf = torch.from_numpy(srf).float()
+                else:
+                    logger.info(f'SRF not found at {srf_path}, using wv_sigmas ...')
+                    assert self.create_srf_from_mu_std, \
+                        f'SRF not found at {srf_path} and create_srf_from_mu_std is False'
+                    assert 'wv_sigmas' in x_dict, \
+                        f'wv_sigmas not provided'
+                    
+                    mus = x_dict['chn_ids']
+                    sigmas = x_dict['wv_sigmas']
+                    srf = self._create_srf_from_mu_std(mus, sigmas)
 
-        srf_path = os.path.join(
-            parent_dir,
-            "models/SenPaMAE/responsefunctions",
-            self.data_config.senpamae_srf_name,
-        )
-        if not os.path.exists(srf_path):
-            raise ValueError(f"SRF not found at {srf_path}")
-        self.srf = np.load(srf_path).T
-        self.srf = self.srf[self.data_config.senpamae_channels, :]
-        self.srf = torch.from_numpy(self.srf).float()
-        self.srf = self.srf.unsqueeze(0)
+                self.srfs_loaded[f] = srf
 
-        band_gsds = self.data_config.band_gsds
-        if band_gsds is None:
-            band_gsds = [10]*self.data_config.num_channels
-            logger.warning("No band GSDs provided, using default values")
-        # Convert band_gsds to numpy array: always 4 bands
-        self.band_gsds = np.array(band_gsds, dtype=np.float32)
-        print(f"Band GSDs: {self.band_gsds}")
+            srf = self.srfs_loaded[f][band_ids[i]]
+            srfs.append(srf)
 
-        self.band_gsds = torch.tensor(self.band_gsds).float().unsqueeze(0)
-        assert self.band_gsds.shape[1] == self.data_config.num_channels, f"Band GSDs size {self.band_gsds.shape[1]} not equal to {self.data_config.num_channels} channels"
+        srf = torch.stack(srfs, dim=0).to(device)
+        gsds = x_dict['gsd']
 
-        logger.info(f"SRF shape: {self.srf.shape}")
-        logger.info(f"Selected GSDs: {self.band_gsds}")
+        return srf, gsds
 
+    def _create_srf_from_mu_std(self, mus: Tensor, sigmas: Tensor):
+        assert mus.shape[0] == sigmas.shape[0]
+        x_min, x_max = 0, 2301
+        x = torch.linspace(x_min, x_max, 2301).unsqueeze(0).to(mus.device)
+        vals = torch.exp(-0.5 * ((x - mus.unsqueeze(1)) / sigmas.unsqueeze(1)) ** 2)
+        vals = vals / vals.max(dim=1, keepdim=True)[0]
+        return vals
 
-    def apply_peft(self, encoder, lora_cfg: dict):
-        """
-        Apply LoRA to the last few layers of the encoder using PEFT.
-        """
-
-        logger.info("LORA: Applying PEFT: ", lora_cfg)
-
-        # Configure LoRA
-        peft_config = LoraConfig(
-            r=lora_cfg.get("lora_rank", 16),  # Rank of LoRA
-            lora_alpha=lora_cfg.get("lora_alpha", 16),  # Scaling factor for LoRA
-            target_modules=lora_cfg.get(
-                "lora_target_modules", "blocks.*.attn.qkv"
-            ),  # ["qkv", "proj"]
-            lora_dropout=lora_cfg.get("lora_dropout", 0.0),  # Dropout rate for LoRA
-            bias=lora_cfg.get("bias", "none"),
-            task_type=lora_cfg.get(
-                "lora_task_type", None
-            ),  # Task type (use appropriate type for your model), "SEQ_CLS"
-        )
-
-        # Wrap the encoder with PEFT
-        self.encoder = get_peft_model(encoder, peft_config)
-
-
-    def get_blocks(self, x):
+    def get_blocks(self, x_dict):
         self.cache = []
-        device = x.device
-        srf = self.srf.to(device)
-        gsd = self.band_gsds.to(device)
-        self.encoder(x, gsd=gsd, rf=srf)
+        imgs: Tensor = x_dict['imgs']
+
+        srf, gsd = self._get_srf_gsds(x_dict, imgs.device)
+        srf = srf.expand(imgs.shape[0], -1, -1)
+        self.encoder(imgs, gsd=gsd, rf=srf)
 
         blocks_list = self.cache
         self.cache = []

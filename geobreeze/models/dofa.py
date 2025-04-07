@@ -42,7 +42,7 @@ class Dofa(EvalModelWrapper):
                 lambda m, i, o: self._cache_block(o))
 
 
-    def _process_chn_ids(self, chn_ids):
+    def _process_chn_ids(self, chn_ids: Tensor):
         chn_ids[chn_ids > 0] = chn_ids[chn_ids > 0] / 1e3 # dofa uses microns
         chn_ids[chn_ids < 0] = 5.6 # dofa uses 5600 nm for all SAR channels
         return chn_ids

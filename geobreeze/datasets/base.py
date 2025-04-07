@@ -9,7 +9,11 @@ logger = logging.getLogger('eval')
 
 
 class BaseDataset(torch.utils.data.Dataset):
-    def __init__(self, ds_name, band_ids=None, metainfo: dict={'chn_ids': 'bands.gaussian.mu'}):
+    def __init__(
+            self, 
+            ds_name, 
+            band_ids=None, 
+            metainfo: dict={'chn_ids': 'gaussian.mu', 'gsd':'GSD', 'srf_filename': 'srf_filename'}):
 
         self.ds_name = ds_name
         ds_config = OmegaConf.create(load_ds_cfg(ds_name))
@@ -29,21 +33,14 @@ class BaseDataset(torch.utils.data.Dataset):
         metainfo = metainfo or self._default_meta_info
 
         metainfo_bands = {}
-        band_keys = {new_k: old_k[6:] for new_k, old_k in metainfo.items() 
-                      if old_k.startswith('bands.')}
-        for new_k, old_k in band_keys.items():
-            data_list = [OmegaConf.select(band, old_k) or torch.nan 
-                         for band in self.ds_config.bands]
-            data_tensor = torch.tensor(data_list, dtype=torch.float32)
-            metainfo_bands[new_k] = data_tensor
+        for new_k, old_k in metainfo.items():
+            data = [OmegaConf.select(band, old_k) for band in self.ds_config.bands]
+            if isinstance(data[0], (int, float)):
+                data = torch.tensor(data, dtype=torch.float32)
+            metainfo_bands[new_k] = data
         self.metainfo_bands = metainfo_bands
 
-        sensor_keys = {new_k: old_k for new_k, old_k in metainfo.items() 
-                        if not old_k.startswith('bands.')}
-        self.metainfo_sensor = {new_k: OmegaConf.select(self.ds_config, old_k) 
-                           for new_k, old_k in sensor_keys.items()}
-
-    def _calibrate_bands(self, band_ids, verbose=True):
+    def _calibrate_bands(self, band_ids):
         """ set which bands are passed """
 
         if band_ids is None:
@@ -70,7 +67,7 @@ class BaseDataset(torch.utils.data.Dataset):
         if self.band_ids is not None:
             x = x[self.band_ids]
 
-        x = dict(imgs=x, **self._metainfo_bands_output_order, **self.metainfo_sensor)
+        x = dict(imgs=x, band_ids=torch.tensor(self.band_ids), **self._metainfo_bands_output_order)
         return x, label
 
     def __len__(self):
@@ -81,3 +78,28 @@ class BaseDataset(torch.utils.data.Dataset):
     
     def _len(self):
         raise NotImplementedError()
+
+
+def collate_fn(data_list):
+
+    with_label = isinstance(data_list[0], tuple)
+    batch = torch.utils.data.default_collate(data_list)
+    if with_label:
+        batch_label = batch[1]
+        batch = batch[0]
+
+    if 'band_ids' in batch:
+        batch['band_ids'] = batch['band_ids'][0]
+    if 'srf_filename' in batch:
+        batch['srf_filename'] = [d[0] for d in batch['srf_filename']]
+
+    if with_label:
+        return batch, batch_label
+    return batch
+
+def batch_to_device(batch, device, **kwargs):
+    for k, v in batch.items():
+        if isinstance(v, torch.Tensor):
+            batch[k] = v.to(device, **kwargs)
+    return batch 
+

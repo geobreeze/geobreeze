@@ -17,6 +17,7 @@ from geobreeze.engine.accelerated.linear import run_eval_linear
 from geobreeze.engine.accelerated.knn import eval_knn_with_model
 from geobreeze.engine.lightning_task import LightningClsRegTask, LightningSegmentationTask
 from geobreeze.engine.model import EvalModelWrapper
+from geobreeze.datasets.base import collate_fn as geobreeze_collate_fn
 
 import logging
 import json
@@ -287,18 +288,21 @@ def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
         **cfg.dl,
         shuffle=True,
         drop_last=True,
+        collate_fn = geobreeze_collate_fn,
     )
     val_dl = torch.utils.data.DataLoader(
         datasets['val'],
         **cfg.dl,
         shuffle=False,
         drop_last=False,
+        collate_fn = geobreeze_collate_fn,
     )
     test_dl = torch.utils.data.DataLoader(
         datasets['test'],
         **cfg.dl,
         shuffle=False,
         drop_last=False,
+        collate_fn = geobreeze_collate_fn,
     )
 
     # Train
