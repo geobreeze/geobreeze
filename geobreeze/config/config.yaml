@@ -20,10 +20,7 @@ data:
     _target_: null
     transform: null
 
-  test:
-    _target_: null
-    transform: null
-
+  test: null
 
 # specific to training_mode
 optim: null
@@ -39,42 +36,36 @@ _vars:
     cls:
 
       train:
-      - _target_: kornia.augmentation.RandomHorizontalFlip
+      - _target_: RandomHorizontalFlip
         p: 0.5
         keepdim: true
-      - _target_: kornia.augmentation.RandomVerticalFlip
+      - _target_: RandomVerticalFlip
         p: 0.5
         keepdim: true
-      # - _target_: kornia.augmentation.RandomResizedCrop
-      #   # size: ["${model.image_resolution}", "${model.image_resolution}"]
-      #   scale: [0.8, 1.0]
-      #   size: [224,224]
-      - _target_: kornia.augmentation.Resize
-        size: "${model.image_resolution}"
+      - _target_: RandomResizedCrop
+        size: ["${model.image_resolution}","${model.image_resolution}"]
+        scale: [0.8, 1.0]
         keepdim: true
 
       val:
-      - _target_: kornia.augmentation.Resize
-        size: "${model.image_resolution}"
+      - _target_: Resize
+        size: ["${model.image_resolution}","${model.image_resolution}"]
         keepdim: true
 
     segm:
       train:
-      - _target_: kornia.augmentation.RandomHorizontalFlip
+      - _target_: RandomHorizontalFlip
         p: 0.5
         keepdim: true
-      - _target_: kornia.augmentation.RandomVerticalFlip
+      - _target_: RandomVerticalFlip
         p: 0.5
         keepdim: true
-      # - _target_: kornia.augmentation.RandomResizedCrop
-      #   # size: ["${model.image_resolution}", "${model.image_resolution}"]
-      #   scale: [0.8, 1.0]
-      #   size: [224,224]
-      - _target_: kornia.augmentation.Resize
-        size: "${model.image_resolution}"
+      - _target_: RandomResizedCrop
+        size: ["${model.image_resolution}", "${model.image_resolution}"]
+        scale: [0.8, 1.0]
         keepdim: true
 
       val:
-      - _target_: kornia.augmentation.Resize
+      - _target_: Resize
         size: "${model.image_resolution}"
         keepdim: true

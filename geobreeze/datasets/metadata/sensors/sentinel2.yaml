@@ -1,6 +1,8 @@
 instrument: MSI
 level: L1C
 
+srf_filename: rfs_sentinel2_a_13b.npy
+
 bands:
   B01:
     name: '01 - Coastal aerosol'
