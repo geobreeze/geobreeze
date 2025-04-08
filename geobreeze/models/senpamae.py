@@ -117,4 +117,4 @@ def create_srf_from_mu_std(mus: Tensor, sigmas: Tensor):
     x = torch.linspace(x_min, x_max, 2301).unsqueeze(0).to(mus.device)
     vals = torch.exp(-0.5 * ((x - mus.unsqueeze(1)) / sigmas.unsqueeze(1)) ** 2)
     vals = vals / vals.max(dim=1, keepdim=True)[0]
-    return vals
+    return vals.transpose(0,1)

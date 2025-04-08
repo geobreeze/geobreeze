@@ -1,5 +1,7 @@
 instrument: Intuition
 processing_level: Unknown
+srf_filename: intuition.npy
+
 GSD: 2
 bands:
   B001:

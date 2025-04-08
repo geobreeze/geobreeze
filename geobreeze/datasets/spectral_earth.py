@@ -301,90 +301,25 @@ class SpectralEarthDataset(NonGeoDataset):
 
 
 
-class ClsDataAugmentation(torch.nn.Module):
-    def __init__(self, size, source_chn_ids, split="val", mean=None, std=None, band_ids=None, target_chn_ids=None):
-        super().__init__()
-
-        flipH = K.RandomHorizontalFlip(p=0.5, keepdim=True)
-        flipV = K.RandomVerticalFlip(p=0.5, keepdim=True)
-        rcrop = K.RandomResizedCrop(_to_tuple(size), scale=(0.8, 1.0), keepdim=True)
-        r = K.Resize(_to_tuple(size), keepdim=True)
-        self.output_chn_ids = None
-        
-        # setup HS specific augmentations
-        if target_chn_ids is not None:
-            chn_sim = ChannelSimulator(source_chn_ids=source_chn_ids, target_chn_ids=target_chn_ids)
-            self.output_chn_ids = target_chn_ids
-        elif band_ids is not None:
-            chn_sample = ChannelSampler(band_ids)
-            if source_chn_ids is not None:
-                self.output_chn_ids = source_chn_ids[band_ids]
-            else:
-                raise ValueError("[ClsDataAugmentation] source_chn_ids must be provided if band_ids are provided")
-        else:
-            self.output_chn_ids = source_chn_ids
-
-        self.transforms = []
-        if split == "train":
-            if target_chn_ids is not None:
-                print(f'[ClsDataAugmentation: train] Simulating channels: {target_chn_ids}')
-                self.transforms.append(chn_sim)
-            elif band_ids is not None:
-                print(f'[ClsDataAugmentation: train] Sampling channels: {band_ids}')
-                self.transforms.append(chn_sample)
-            else:
-                pass
-            
-            self.transforms.extend([rcrop, flipH, flipV])
-        else:
-            if target_chn_ids is not None:
-                print(f'[ClsDataAugmentation: val/test] Simulating channels: {target_chn_ids}')
-                self.transforms.append(chn_sim)
-            elif band_ids is not None:
-                print(f'[ClsDataAugmentation: val/test] Sampling channels: {band_ids}')
-                self.transforms.append(chn_sample)
-            else:
-                pass
-
-            self.transforms.append(r)
-
-        self.transform = torch.nn.Sequential(*self.transforms)
-
-    def get_chn_ids(self):
-        return self.output_chn_ids
-
-    @torch.no_grad()
-    def forward(self, x):
-        return self.transform(x)
-
-
 class CorineDataset(BaseDataset):
 
-    def create_dataset(self):
-        train_transform = ClsDataAugmentation(split="train", size=self.img_size, band_ids=self.band_ids, source_chn_ids=self.source_chn_ids, target_chn_ids=self.target_chn_ids)
-        eval_transform = ClsDataAugmentation(split="test", size=self.img_size, band_ids=self.band_ids, source_chn_ids=self.source_chn_ids, target_chn_ids=self.target_chn_ids)
+    def __init__(self,
+            root: str,
+            split: str,
+            transform_list: list = [],
+            normalize: bool = True,
+            **kwargs
+        ):
+        super().__init__('corine', **kwargs)
 
-        if self.config.band_ids is not None: # so we dont have to type in the band ids manually
-            self.config.senpamae_channels = self.config.band_ids
-            self.config.band_gsds = [30] * len(self.config.band_ids)
-        else: # using all bands
-            self.config.senpamae_channels = list(range(0, self.config.num_channels))
-            self.config.band_gsds = [30] * self.config.num_channels
+        trf = K.AugmentationSequential(*transform_list, data_keys=['image'])
 
-        # Override the config with the transformed channel ids
-        output_chn_ids = train_transform.get_chn_ids() #provides the updated channel ids after augmentation
-        if output_chn_ids is not None:
-            self.config['wavelengths_mean_nm'] = output_chn_ids[:,0].tolist()
-            self.config['wavelengths_sigma_nm'] = output_chn_ids[:,1].tolist()
-
-        dataset_train = SpectralEarthDataset(
-            root=self.root_dir, split="train", task_dir='corine', transforms=train_transform,
-        )
-        dataset_val = SpectralEarthDataset(
-            root=self.root_dir, split="val", task_dir='corine', transforms=eval_transform,
-        )
-        dataset_test = SpectralEarthDataset(
-            root=self.root_dir, split="test", task_dir='corine', transforms=eval_transform,
+        self.dataset = SpectralEarthDataset(
+            root=root, split=split, task_dir='corine', transforms=trf, normalize=normalize
         )
 
-        return dataset_train, dataset_val, dataset_test
+    def _getitem(self, idx):
+        return self.dataset[idx]
+    
+    def _len(self):
+        return len(self.dataset)
