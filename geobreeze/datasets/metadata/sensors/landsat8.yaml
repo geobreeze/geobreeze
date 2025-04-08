@@ -1,5 +1,6 @@
-instrument: 'MSI'
-processing_level: 'L1C'
+instrument: MSI
+processing_level: L1C
+srf_filename: landsat8_srf.npy
 
 bands:
   B01:
@@ -11,7 +12,7 @@ bands:
     img_size: 256
 
   B02:
-    name: 'Blue'
+    name: '02 - Blue'
     gaussian:
       mu: 482.626742301136
       sigma: 22.522673410847318
@@ -19,7 +20,7 @@ bands:
     img_size: 256
 
   B03:
-    name: 'Green'
+    name: '03 - Green'
     gaussian:
       mu: 560.991848338365
       sigma: 21.835390564974098
@@ -27,28 +28,28 @@ bands:
     img_size: 256
 
   B04:
-    name: 'Red'
+    name: '04 - Red'
     gaussian:
       mu: 654.2860463136833
       sigma: 14.30803308731993
     GSD: 30
 
   B05:
-    name: 'NIR'
+    name: '05 - NIR'
     gaussian:
       mu: 864.6129891438968
       sigma: 11.346929217149494
     GSD: 30
 
   B06:
-    name: 'SWIR 1'
+    name: '06 - SWIR1'
     gaussian:
       mu: 1608.7469945334756
       sigma: 33.925314891204984
     GSD: 30
 
   B07:
-    name: 'SWIR 2'
+    name: '07 - SWIR2'
     gaussian:
       mu: 2203.5048261584875
       sigma: 76.21353457472965
