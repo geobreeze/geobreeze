@@ -68,18 +68,9 @@ class SenPaMAE(EvalModelWrapper):
                 if os.path.exists(srf_path):
                     srf = np.load(srf_path).T
                     srf = torch.from_numpy(srf).float()
+                    self.srfs_loaded[f] = srf
                 else:
-                    logger.info(f'SRF not found at {srf_path}, using wv_sigmas ...')
-                    assert self.create_srf_from_mu_std, \
-                        f'SRF not found at {srf_path} and create_srf_from_mu_std is False'
-                    assert 'wv_sigmas' in x_dict, \
-                        f'wv_sigmas not provided'
-                    
-                    mus = x_dict['chn_ids']
-                    sigmas = x_dict['wv_sigmas']
-                    srf = self._create_srf_from_mu_std(mus, sigmas)
-
-                self.srfs_loaded[f] = srf
+                    raise FileNotFoundError(f"SRF not found at {srf_path}")
 
             srf = self.srfs_loaded[f][band_ids[i]]
             srfs.append(srf)
@@ -88,14 +79,6 @@ class SenPaMAE(EvalModelWrapper):
         gsds = x_dict['gsd']
 
         return srf, gsds
-
-    def _create_srf_from_mu_std(self, mus: Tensor, sigmas: Tensor):
-        assert mus.shape[0] == sigmas.shape[0]
-        x_min, x_max = 0, 2301
-        x = torch.linspace(x_min, x_max, 2301).unsqueeze(0).to(mus.device)
-        vals = torch.exp(-0.5 * ((x - mus.unsqueeze(1)) / sigmas.unsqueeze(1)) ** 2)
-        vals = vals / vals.max(dim=1, keepdim=True)[0]
-        return vals
 
     def get_blocks(self, x_dict):
         self.cache = []
@@ -126,3 +109,12 @@ class SenPaMAE(EvalModelWrapper):
     def default_blocks_to_featurevec(self, block_list):
         # no official recommendation by the authors, using this for now
         return self.norm(block_list[-1]).mean(dim=1)
+
+
+def create_srf_from_mu_std(mus: Tensor, sigmas: Tensor):
+    assert mus.shape[0] == sigmas.shape[0]
+    x_min, x_max = 0, 2301
+    x = torch.linspace(x_min, x_max, 2301).unsqueeze(0).to(mus.device)
+    vals = torch.exp(-0.5 * ((x - mus.unsqueeze(1)) / sigmas.unsqueeze(1)) ** 2)
+    vals = vals / vals.max(dim=1, keepdim=True)[0]
+    return vals

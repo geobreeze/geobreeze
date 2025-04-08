@@ -2,7 +2,7 @@ from .utils.utils import ChannelSampler, ChannelSimulator, extract_wavemus, load
 import torch
 import torch
 import logging
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, ListConfig
 from copy import deepcopy
 
 logger = logging.getLogger('eval')
@@ -48,8 +48,14 @@ class BaseDataset(torch.utils.data.Dataset):
             self._metainfo_bands_output_order = deepcopy(self.metainfo_bands)
             return
 
-        self._metainfo_bands_output_order = {
-            k: v[band_ids] for k, v in self.metainfo_bands.items()}
+        _metainfo_bands_output_order = {}
+        for k, v in self.metainfo_bands.items():
+            if isinstance(v, list):
+                v = [v[i] for i in band_ids]
+            elif isinstance(v, torch.Tensor):
+                v = v[band_ids]
+            _metainfo_bands_output_order[k] = v
+        self._metainfo_bands_output_order = _metainfo_bands_output_order
 
         # logger feedback
         band_names = [self.ds_config['bands'][i].get('name','_unknown_') for i in band_ids]
