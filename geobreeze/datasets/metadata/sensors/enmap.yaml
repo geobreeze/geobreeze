@@ -1,6 +1,9 @@
-instrument: 'EnMAP'
-processing_level: 'L2A'
+instrument: EnMAP
+processing_level: L2A
 GSD: 30
+
+srf_filename: rfs_enmap_recon.npy
+
 bands:
   B001:
     gaussian:

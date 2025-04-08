@@ -1,7 +1,7 @@
 _target_: geobreeze.models.senpamae.SenPaMAE
 
 pretrained_path: ${oc.env:MODEL_WEIGHTS_DIR}/senpamae_doubleParameterEmbedding.pt
-srf_dir: /home/hk-project-pai00028/tum_mhj8661/code/fm-playground/geofm_src/foundation_models/SenPaMAE/responsefunctions
+srf_dir: /home/hk-project-pai00028/tum_mhj8661/code/srfs
 
 embed_dim: 768
 image_resolution: 144

@@ -1,5 +1,5 @@
-instrument: 'Intuition'
-processing_level: 'Unknown'
+instrument: Intuition
+processing_level: Unknown
 GSD: 2
 bands:
   B001:
