@@ -4,6 +4,7 @@ from .resisc45 import Resisc45
 from .eurosat_sar import EurosatSAR
 from .hyperview import Hyperview
 from .spectral_earth import CorineDataset
+from .spacenet1 import SpaceNet1Dataset
 
 # from geobreeze.datasets.geobench_wrapper import GeoBenchDataset
 # from geobreeze.datasets.resisc_wrapper import Resics45Dataset

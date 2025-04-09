@@ -34,6 +34,9 @@ from torchgeo.datasets.utils import (
     which,
 )
 
+from geobreeze.datasets.base import BaseDataset
+import kornia.augmentation as K
+
 
 class SpaceNet(NonGeoDataset, ABC):
     """Abstract base class for the SpaceNet datasets.
@@ -465,3 +468,51 @@ class SpaceNet1(SpaceNet):
         '3band': (406, 439),
         '8band': (102, 110),
     }
+
+
+
+
+class SpaceNet1Dataset(BaseDataset):
+
+    MEAN = {
+        '8band': torch.tensor([270.4807120500449, 324.15669565737215, 507.8092169819377, 537.8422401853196, 537.7207406977241, 1209.7003277637814, 1866.045165626201, 2004.8784342115375])
+    }
+    STD = {
+        '8band': torch.tensor([410.9821842645062, 466.7364072457086, 534.92315090301, 618.9212492576934, 647.7404624683102, 819.0946643361298, 1225.529915856995, 1294.781212164937])
+    } 
+
+    def __init__(self, 
+        root: str,
+        split: str,
+        transform_list: list = [],
+        image: str = '8band',
+        normalize = True,
+        **kwargs
+    ):
+        super().__init__(f'spacenet1_{image}', **kwargs)
+
+        self.trf = K.AugmentationSequential(
+            *transform_list,
+            data_keys=["input", "mask"],
+            same_on_batch=True,
+        )
+
+        self.normalize = normalize
+        self.norm_trf = K.Normalize(mean=self.MEAN[image], std=self.STD[image], keepdim=True)
+
+        self.dataset = SpaceNet1(
+            root=root,
+            split=split,
+            image=image,
+        )
+
+    def _getitem(self, idx):
+        sample = self.dataset[idx]
+        x = sample['image']
+        y = sample['mask']
+
+        if self.normalize:
+            x = self.norm_trf(x)
+        x, y = self.trf(x, y)
+
+        return x, y

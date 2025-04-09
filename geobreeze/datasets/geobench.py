@@ -51,7 +51,7 @@ class GeoBenchDataset(BaseDataset):
         self.normalize_trf = K.augmentation.Normalize(mean=MEAN, std=STD, keepdim=True)
         self.normalize = normalize
 
-        data_keys = ['input'] if self.is_cls else ['input', 'mask']
+        data_keys = ['image'] if self.is_cls else ['image', 'mask']
         self.transform = K.augmentation.AugmentationSequential(
             *transform_list, 
             data_keys=data_keys
