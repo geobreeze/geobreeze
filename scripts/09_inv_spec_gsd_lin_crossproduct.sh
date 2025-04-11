@@ -3,14 +3,14 @@
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
 
-#SBATCH --job-name=gsd_inv
+#SBATCH --job-name=gsd_inv_anysat
 #SBATCH --partition=accelerated
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=20        # default: 38
-#SBATCH --time=00:30:00
-#SBATCH --array=0-185
+#SBATCH --time=01:30:00
+#SBATCH --array=0-1
 
 
 # ---------- HOREKA ------------
@@ -22,79 +22,79 @@ cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO
 
 # m-eurosat
 
-
-
-
 dataset=m-eurosat_resize
 models=(
-    "panopticon [1] 200"
-    "panopticon [8] 200"
-    "panopticon [7] 200"
-    "panopticon [0] 200"
-    "panopticon [12] 200"
-    "panopticon [0,5,7] 200"
-    "panopticon [9,10,12] 200"
-    "panopticon [2,5,7] 200"
-    "panopticon [3,4,11] 200"
-    "panopticon [2,5,10] 200"
-    "panopticon [2,4,10,11,12] 200"
-    "panopticon [0,3,4,7,8] 200"
-    "panopticon [1,2,4,6,12] 200"
-    "panopticon [1,2,4,7,9] 200"
-    "panopticon [0,1,10,11,12] 200"
-    "panopticon [3,5,6,7,8,10,11] 200"
-    "panopticon [0,1,2,3,4,5,7] 200"
-    "panopticon [1,2,3,4,7,8,9] 200"
-    "panopticon [0,4,6,7,8,11,12] 200"
-    "panopticon [2,5,6,7,8,9,12] 200"
-    "panopticon [0,1,3,4,5,6,8,9,11] 200"
-    "panopticon [0,1,2,4,5,7,8,9,11] 200"
-    "panopticon [1,2,4,5,7,9,10,11,12] 200"
-    "panopticon [0,2,3,4,5,7,10,11,12] 200"
-    "panopticon [1,2,3,4,5,6,8,10,11] 200"
-    "panopticon [0,1,4,5,6,7,8,9,10,11,12] 200"
-    "panopticon [0,1,3,4,5,6,7,8,9,11,12] 200"
-    "panopticon [0,1,2,3,4,5,6,8,9,11,12] 200"
-    "panopticon [0,1,2,3,4,5,7,8,9,11,12] 200"
-    "panopticon [0,1,2,3,5,6,8,9,10,11,12] 200"
-    "panopticon [0,1,2,3,4,5,6,7,8,9,10,11,12] 200"
-    "dofa [1] 700"
-    "dofa [8] 700"
-    "dofa [7] 700"
-    "dofa [0] 700"
-    "dofa [12] 700"
-    "dofa [0,5,7] 700"
-    "dofa [9,10,12] 700"
-    "dofa [2,5,7] 700"
-    "dofa [3,4,11] 700"
-    "dofa [2,5,10] 700"
-    "dofa [2,4,10,11,12] 700"
-    "dofa [0,3,4,7,8] 700"
-    "dofa [1,2,4,6,12] 700"
-    "dofa [1,2,4,7,9] 700"
-    "dofa [0,1,10,11,12] 700"
-    "dofa [3,5,6,7,8,10,11] 700"
-    "dofa [0,1,2,3,4,5,7] 700"
-    "dofa [1,2,3,4,7,8,9] 700"
-    "dofa [0,4,6,7,8,11,12] 700"
-    "dofa [2,5,6,7,8,9,12] 700"
-    "dofa [0,1,3,4,5,6,8,9,11] 700"
-    "dofa [0,1,2,4,5,7,8,9,11] 700"
-    "dofa [1,2,4,5,7,9,10,11,12] 700"
-    "dofa [0,2,3,4,5,7,10,11,12] 700"
-    "dofa [1,2,3,4,5,6,8,10,11] 700"
-    "dofa [0,1,4,5,6,7,8,9,10,11,12] 700"
-    "dofa [0,1,3,4,5,6,7,8,9,11,12] 700"
-    "dofa [0,1,2,3,4,5,6,8,9,11,12] 700"
-    "dofa [0,1,2,3,4,5,7,8,9,11,12] 700"
-    "dofa [0,1,2,3,5,6,8,9,10,11,12] 700"
-    "dofa [0,1,2,3,4,5,6,7,8,9,10,11,12] 700"
+    # "panopticon [1] 200"
+    # "panopticon [8] 200"
+    # "panopticon [7] 200"
+    # "panopticon [0] 200"
+    # "panopticon [12] 200"
+    # "panopticon [0,5,7] 200"
+    # "panopticon [9,10,12] 200"
+    # "panopticon [2,5,7] 200"
+    # "panopticon [3,4,11] 200"
+    # "panopticon [2,5,10] 200"
+    # "panopticon [2,4,10,11,12] 200"
+    # "panopticon [0,3,4,7,8] 200"
+    # "panopticon [1,2,4,6,12] 200"
+    # "panopticon [1,2,4,7,9] 200"
+    # "panopticon [0,1,10,11,12] 200"
+    # "panopticon [3,5,6,7,8,10,11] 200"
+    # "panopticon [0,1,2,3,4,5,7] 200"
+    # "panopticon [1,2,3,4,7,8,9] 200"
+    # "panopticon [0,4,6,7,8,11,12] 200"
+    # "panopticon [2,5,6,7,8,9,12] 200"
+    # "panopticon [0,1,3,4,5,6,8,9,11] 200"
+    # "panopticon [0,1,2,4,5,7,8,9,11] 200"
+    # "panopticon [1,2,4,5,7,9,10,11,12] 200"
+    # "panopticon [0,2,3,4,5,7,10,11,12] 200"
+    # "panopticon [1,2,3,4,5,6,8,10,11] 200"
+    # "panopticon [0,1,4,5,6,7,8,9,10,11,12] 200"
+    # "panopticon [0,1,3,4,5,6,7,8,9,11,12] 200"
+    # "panopticon [0,1,2,3,4,5,6,8,9,11,12] 200"
+    # "panopticon [0,1,2,3,4,5,7,8,9,11,12] 200"
+    # "panopticon [0,1,2,3,5,6,8,9,10,11,12] 200"
+    # "panopticon [0,1,2,3,4,5,6,7,8,9,10,11,12] 200"
+    # "dofa [1] 700"
+    # "dofa [8] 700"
+    # "dofa [7] 700"
+    # "dofa [0] 700"
+    # "dofa [12] 700"
+    # "dofa [0,5,7] 700"
+    # "dofa [9,10,12] 700"
+    # "dofa [2,5,7] 700"
+    # "dofa [3,4,11] 700"
+    # "dofa [2,5,10] 700"
+    # "dofa [2,4,10,11,12] 700"
+    # "dofa [0,3,4,7,8] 700"
+    # "dofa [1,2,4,6,12] 700"
+    # "dofa [1,2,4,7,9] 700"
+    # "dofa [0,1,10,11,12] 700"
+    # "dofa [3,5,6,7,8,10,11] 700"
+    # "dofa [0,1,2,3,4,5,7] 700"
+    # "dofa [1,2,3,4,7,8,9] 700"
+    # "dofa [0,4,6,7,8,11,12] 700"
+    # "dofa [2,5,6,7,8,9,12] 700"
+    # "dofa [0,1,3,4,5,6,8,9,11] 700"
+    # "dofa [0,1,2,4,5,7,8,9,11] 700"
+    # "dofa [1,2,4,5,7,9,10,11,12] 700"
+    # "dofa [0,2,3,4,5,7,10,11,12] 700"
+    # "dofa [1,2,3,4,5,6,8,10,11] 700"
+    # "dofa [0,1,4,5,6,7,8,9,10,11,12] 700"
+    # "dofa [0,1,3,4,5,6,7,8,9,11,12] 700"
+    # "dofa [0,1,2,3,4,5,6,8,9,11,12] 700"
+    # "dofa [0,1,2,3,4,5,7,8,9,11,12] 700"
+    # "dofa [0,1,2,3,5,6,8,9,10,11,12] 700"
+    # "dofa [0,1,2,3,4,5,6,7,8,9,10,11,12] 700"
+    "anysat_s2 [0,1,2,3,4,5,6,7,8,9] 100"
+    "anysat_s2 [1,2,3,4,5,6,7,8,11,12] 100"
 )
 
 tasks=(
-    "50 32"
-    "25 16"
-    "16.6 11"
+    "100 64"
+    # "50 32"
+    # "25 16"
+    # "16.6 11"
     # "12.5 8"
 )
 
@@ -157,6 +157,7 @@ do
         data.train.transform.0.size=$size \
         data.val.transform.0.size=$size \
         data.test.transform.0.size=$size \
+        optim.check_val_every_n_epoch=100 \
         $add_kwargs \
         # overwrite=true \
 

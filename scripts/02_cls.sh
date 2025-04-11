@@ -3,14 +3,14 @@
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
 
-#SBATCH --job-name=cls_dofa
+#SBATCH --job-name=cls_corine_senpamae
 #SBATCH --partition=accelerated
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=20        # default: 38
-#SBATCH --time=03:00:00
-#SBATCH --array=0-3
+#SBATCH --cpus-per-task=38        # default: 38
+#SBATCH --time=01:00:00
+#SBATCH --array=0
 
 # fastdevrun='--fastdevrun'
 # eval="eval.only_eval=True"
@@ -39,10 +39,18 @@ all_tasks=(
     # "eurosat-sar dinov2 [0,1,1] 900"
 
 
-    "corine-sd dofa -1 300 -1 corine-sd"
-    "corine-sd dofa -1 300 0.1 corine-sd-0.1"
-    "corine-md dofa -1 300 -1 corine-md"
-    "corine-md dofa -1 300 0.1 corine-md-0.1"
+    # "corine-sd dofa -1 300 -1 corine-sd"
+    # "corine-sd dofa -1 300 0.1 corine-sd-0.1"
+    # "corine-md dofa -1 300 -1 corine-md"
+    # "corine-md dofa -1 300 0.1 corine-md-0.1"
+
+    # "m-brick-kiln anysat_s2 [1,2,3,4,5,6,7,8,11,12] 100 -1 m-brick-kiln"
+    # "m-brick-kiln anysat_s2 [0,1,2,3,4,5,6,7,8,9] 100 -1 m-brick-kiln"
+
+    # "corine-sd senpamae -1 300 -1 corine-sd"
+    # "corine-sd senpamae -1 300 0.1 corine-sd-0.1"
+    "corine-md senpamae -1 300 -1 corine-md"
+    # "corine-md senpamae -1 300 0.1 corine-md-0.1"
 )
 
 mode=linear_probe
@@ -90,13 +98,14 @@ do
         +model=base/$model \
         +data=$dataset\
         +optim=$mode \
-        +output_dir=\'$ODIR/doublecheck/$ds_name_output_dir/base/$model/\' \
+        +output_dir=\'$ODIR/doublecheck/$ds_name_output_dir/base/$model/$ids/\' \
         dl.batch_size=$batch_size \
-        dl.num_workers=8 \
+        dl.num_workers=10 \
         num_gpus=1 \
         seed=21 \
         ++data.train.subset=$train_subset \
         ++data.val.subset=$val_subset \
+        optim.check_val_every_n_epoch=100 \
         $add_kwargs \
         # optim.epochs=1 \
         # +output_dir=\'$OLD_ODIR/t1_v3/$dataset/base/$model/\' \

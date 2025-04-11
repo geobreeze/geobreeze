@@ -1,4 +1,4 @@
-_target_: geobreeze.models.croma.Croma
+_target_: Croma
 
 size: base
 modality: SAR # 12 channel input

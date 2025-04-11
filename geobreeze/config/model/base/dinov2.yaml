@@ -1,4 +1,4 @@
-_target_: geobreeze.models.dinov2.DinoV2
+_target_: DinoV2
 
 torchhub_id: dinov2_vitb14
 

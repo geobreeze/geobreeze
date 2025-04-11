@@ -1,4 +1,4 @@
-_target_: geobreeze.models.softcon.SoftCon
+_target_: SoftCon
 
 dinov2_torchhub_id: dinov2_vitb14
 hf_filename: B2_vitb14_softcon.pth

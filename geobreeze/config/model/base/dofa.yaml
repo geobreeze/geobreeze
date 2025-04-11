@@ -1,4 +1,4 @@
-_target_: geobreeze.models.dofa.Dofa
+_target_: Dofa
 
 size: base
 hf_filename: DOFA_ViT_base_e100.pth

@@ -1,4 +1,4 @@
-_target_: geobreeze.models.senpamae.SenPaMAE
+_target_: SenPaMAE
 
 pretrained_path: ${oc.env:MODEL_WEIGHTS_DIR}/senpamae_doubleParameterEmbedding.pt
 srf_dir: /home/hk-project-pai00028/tum_mhj8661/code/srfs

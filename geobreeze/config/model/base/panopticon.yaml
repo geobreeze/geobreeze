@@ -1,4 +1,4 @@
-_target_: geobreeze.models.panopticon.Panopticon
+_target_: Panopticon
 
 torchhub_id: panopticon_vitb14
 

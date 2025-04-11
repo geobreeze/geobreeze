@@ -1,5 +1,7 @@
 processing_level: 'SR'
 
+srf_filename: rfs_wv23_recon.npy
+
 # Worldview-2 and Worldview-3_VNIR
 # In the corresponding dataset, either of the two above satellites are used. However, since
 # their bands have the same properties, we use the same file for both

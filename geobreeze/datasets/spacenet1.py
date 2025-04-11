@@ -516,3 +516,6 @@ class SpaceNet1Dataset(BaseDataset):
         x, y = self.trf(x, y)
 
         return x, y
+    
+    def _len(self):
+        return len(self.dataset)
