@@ -38,6 +38,7 @@ class LightningTask(LightningModule):
         self.num_classes = num_classes
         self.training_mode = cfg.optim.mode
         self.replace_pe = self.model_config.get('replace_pe', False)
+        self.cfg = cfg
         self.save_hyperparameters()
 
         self.train_metrics = build_metric(
@@ -112,17 +113,13 @@ class LightningTask(LightningModule):
 
         world_size = self.cfg.num_gpus if self.cfg.num_gpus >= 1 else 1
         num_warmup_steps = (
-            len(self.trainer.datamodule.train_dataloader())
-            * self.cfg.optim.warmup_epochs
-            // world_size)
+            self.train_dl_len * self.cfg.optim.warmup_epochs // world_size)
         total_steps = (
-            len(self.trainer.datamodule.train_dataloader())
-            * self.cfg.optim.epochs
-            // world_size)
+            self.train_dl_len * self.cfg.optim.epochs // world_size)
 
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
             optimizer,
-            max_lr=self.cfg.lr,
+            max_lr=self.cfg.optim.lr,
             total_steps=total_steps,
             anneal_strategy="cos",  # Cosine annealing
             pct_start=float(num_warmup_steps)
@@ -184,7 +181,7 @@ class LightningClsRegTask(LightningTask):
 
             params_to_optimize = list([p for _, p in lora_params])
 
-        elif mode == 'full_finetune':
+        elif mode == 'finetune':
             self.unfreeze(self.encoder) 
 
             params_to_optimize = list(self.encoder.parameters())
@@ -203,13 +200,13 @@ class LightningClsRegTask(LightningTask):
         return params_to_optimize
     
     def _step(self, batch, batch_idx, prefix="train"):
-        images, targets = batch
+        x_dict, targets = batch
         
         if self.training_mode == 'linear_probe':
             with torch.no_grad():
-                x = self.encoder.get_blocks(images)
+                x = self.encoder.get_blocks(x_dict)
         else:
-            x = self.encoder.get_blocks(images)
+            x = self.encoder.get_blocks(x_dict)
         x = self.encoder.default_blocks_to_featurevec(x)
         outputs = self.linear_classifier(x)
 
@@ -278,9 +275,9 @@ class LightningSegmentationTask(LightningTask):
         )
 
     def freeze_and_return_params(self):
-        if self.training_mode == 'full_finetune':
+        if self.training_mode == 'finetune':
             self.unfreeze(self.encoder)
-        elif self.training_mode == 'frozen_backbone':
+        elif self.training_mode == 'segm_frozen_backbone':
             self.freeze(self.encoder)
         else:
             raise ValueError(f"Invalid mode: {self.training_mode}")
@@ -300,20 +297,20 @@ class LightningSegmentationTask(LightningTask):
 
         return params_to_optimize
 
-    def forward(self, images):
+    def forward(self, x_dict):
         """Forward pass of the model."""
-        if self.training_mode == 'frozen_backbone':
+        if self.training_mode == 'segm_frozen_backbone':
             with torch.no_grad():
-                feats = self.encoder.get_segm_blks(images)
+                feats = self.encoder.get_segm_blks(x_dict)
         else:
-            feats = self.encoder.get_segm_blks(images)
+            feats = self.encoder.get_segm_blks(x_dict)
 
         feats = self.neck(feats)
         out = self.decoder(feats)
-        out = resize(out, size=images.shape[2:], mode="bilinear", align_corners=False)
+        out = resize(out, size=x_dict['imgs'].shape[2:], mode="bilinear", align_corners=False)
         out_a = self.aux_head(feats)
         out_a = resize(
-            out_a, size=images.shape[2:], mode="bilinear", align_corners=False
+            out_a, size=x_dict['imgs'].shape[2:], mode="bilinear", align_corners=False
         )
         return out, out_a
 

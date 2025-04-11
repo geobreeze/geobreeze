@@ -43,7 +43,7 @@ def process_config(cfg):
         assert cfg.num_gpus == 1, 'accelerated only supports single gpu for now'
         blks = 'linear_probe'
 
-    elif training_mode == 'finetune':
+    elif training_mode in ['finetune','segm_frozen_backbone']:
 
         with open_dict(cfg):
             cfg.optim.lr = cfg.optim.base_lr * cfg.dl.batch_size / 256 * cfg.num_gpus
@@ -307,7 +307,9 @@ def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
 
     # Train
     ckpt_path = os.path.join(cfg.output_dir, 'checkpoints','last.ckpt')
-    trainer.fit(pl_task, train_dl, val_dl, ckpt_path=ckpt_path if cfg.resume else None)
+    resume = cfg.resume and os.path.exists(ckpt_path)
+    pl_task.train_dl_len = len(train_dl)
+    trainer.fit(pl_task, train_dl, val_dl, ckpt_path=ckpt_path if resume else None)
 
     # Test
     best_checkpoint_path = callbacks[0].best_model_path
@@ -315,7 +317,7 @@ def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
     results_list = [dict(
         metric_str=k,
         val=v,
-        best_classifier=f'lr={cfg.lr}'
+        best_classifier=f'lr={cfg.optim.base_lr}'
     ) for ds_dict in results_per_ds_list for k,v in ds_dict.items()]
     results = pd.DataFrame(results_list)
 
@@ -342,7 +344,7 @@ def main(cfg: DictConfig):
         logger.info('Running linear probe')
         results = do_linear_probe(cfg, model, datasets)
     
-    elif training_mode == 'finetune':
+    elif training_mode in ['finetune','segm_frozen_backbone']:
         logger.info('Running finetune')
         results = do_finetune(cfg, model, datasets)
 
