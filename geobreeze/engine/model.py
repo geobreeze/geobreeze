@@ -21,6 +21,7 @@ class EvalModelWrapper(nn.Module):
             embed_dim: int,
             patch_size: int,
             blk_indices: list,
+            replace_pe: bool = False,
             **kwargs
         ):
         super().__init__()
@@ -28,13 +29,14 @@ class EvalModelWrapper(nn.Module):
         self.image_resolution = image_resolution
         self.embed_dim = embed_dim
         self.patch_size = patch_size
+        self.do_replace_pe = replace_pe
 
-        self._load_encoder(blk_indices, **kwargs)
+        self._load_encoder(blk_indices=blk_indices, **kwargs)
         assert hasattr(self, "encoder"), "Encoder has not been loaded!"
         assert hasattr(self, "norm"), "Normalization function has not been loaded!"
         print(f'Loaded encoder with blocks {blk_indices} blocks and norm {self.norm}')
 
-    def _load_encoder(self, blk_indices):
+    def _load_encoder(self, blk_indices, *args, **kwargs):
         """ 
         Loads the encoder and prepares any functionality needed for extracting the 
         blocks index by blk_indices (e.g. register forward hooks) in get_blocks.

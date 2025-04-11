@@ -1,0 +1,14 @@
+_target_: AnySat
+
+torchhub_id: anysat
+input_key: aerial
+# If image size=64x10m, eff_patch_size = 640/160 = 4 in one dim = 4*4 = 16 patches
+patch_size: 10 #in m. 
+
+embed_dim: 768
+image_resolution: 224
+
+blk_indices:
+  segm: [2, 3, 4, 5]
+  linear_probe: [5]
+  default_cls: [5]

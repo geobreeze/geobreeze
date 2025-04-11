@@ -1,16 +1,43 @@
-from omegaconf import open_dict
 import torch.nn as nn
 import torch
 from torch import Tensor
 from einops import repeat, rearrange
 from geobreeze.engine.model import EvalModelWrapper
 import logging
-logger = logging.getLogger()
+import sys
+import os
+
+logger = logging.getLogger('eval')
 
 
 class AnySat(EvalModelWrapper):
-    def _load_encoder(self, blk_indices):
-        self.encoder = torch.hub.load("gastruc/anysat", self.model_config.anysat_torchhub_id, pretrained=True, flash_attn=False)
+    def _load_encoder(
+            self, 
+            blk_indices: list,
+            torchhub_id: str,
+            input_key: str,
+        ):
+        self.input_key = input_key
+
+        p = os.path.join(os.environ['TORCH_HOME'],'hub/gastruc_anysat_main/src/',)
+        sys.path.insert(0, p)
+        logger.info(f'Inserted {p} at pos 0 into sys.path')
+        
+        # Save the current state of sys.modules to a file
+        # modules = sys.modules.keys()
+        # formatted_modules = "\n".join(sorted(modules))
+        # modules_file = '/home/hk-project-pai00028/tum_mhj8661/code/test.txt'
+        # with open(modules_file, 'w') as f:
+        #     f.write(formatted_modules)
+        # print(f'Wrote {len(modules)} modules to {modules_file}')
+
+        self.encoder = torch.hub.load(
+            "gastruc/anysat", 
+            torchhub_id, 
+            pretrained=True, 
+            flash_attn=False,
+            force_reload=False,
+            verbose=True)
 
         # Dont think there is a norm layer to be used here
         self.norm = nn.Identity()
@@ -19,14 +46,6 @@ class AnySat(EvalModelWrapper):
         for idx in blk_indices:
             self.encoder.model.blocks[idx].register_forward_hook(
                 lambda m, i, o: self._cache_block(o))
-            
-        self.patch_size = self.model_config.get('patch_size', 100)
-        if not 'replace_pe' in self.model_config:
-            with open_dict(self.model_config):
-                self.model_config.replace_pe = False
-
-        # print('FORCING REPLACING PE')
-        # self.encoder.model.projector_naip.patch_embed = self.replace_pe(3)
 
     def _cache_block(self,x):
         self.cache.append(x)
@@ -42,8 +61,7 @@ class AnySat(EvalModelWrapper):
             dict[str, Tensor]: formatted input tensor
         """
         dates = None
-        replace_pe = self.model_config.get('replace_pe', False)
-        if not replace_pe:
+        if not self.do_replace_pe:
             match input_key:
                 case "s2":
                     assert x.shape[1] == 10, "Input tensor for s2 should have 10 channels"
@@ -91,7 +109,7 @@ class AnySat(EvalModelWrapper):
         self.cache = []
         # TODO these arguments will be different for segmentation 
         self.encoder(
-            self.format_input(x_dict['imgs'], self.model_config.input_key), 
+            self.format_input(x_dict['imgs'], self.input_key), 
             patch_size=self.patch_size, 
             output='tile')
         blocks = self.cache
@@ -103,7 +121,7 @@ class AnySat(EvalModelWrapper):
     #     #   extract the blocks with the hooks. Only if we use the output,
     #     #   this will make a diff.
     #     self.cache = []
-    #     self.encoder(self.format_input(x, self.model_config.input_key), patch_size=self.patch_size, output='dense', output_modality=self.model_config.input_key)
+    #     self.encoder(self.format_input(x, self.input_key), patch_size=self.patch_size, output='dense', output_modality=self.model_config.input_key)
     #     blocks = self.cache
     #     self.cache = []
     #     patch_size = int(blocks[0].size(1) ** 0.5)
@@ -117,24 +135,24 @@ class AnySat(EvalModelWrapper):
     
     def replace_pe(self, num_channels):
 
-        projector_str = f'projector_{self.model_config.input_key}'
+        projector_str = f'projector_{self.input_key}'
         projector = getattr(self.encoder.model, projector_str)
         #we want to get to encoder.model.projector_naip.patch_embed
         # patch_embed = projector.patch_embed
         assert projector is not None
 
         # Use the original patch size for the new conv2d
-        if self.model_config.input_key == "naip":
+        if self.input_key == "naip":
             patch_size = (8, 8)
-        elif self.model_config.input_key == "spot":
+        elif self.input_key == "spot":
             patch_size = (10, 10)
         else:
-            raise NotImplementedError(f"Patch size not implemented for {self.model_config.input_key}: use either naip or spot")
+            raise NotImplementedError(f"Patch size not implemented for {self.input_key}: use either naip or spot")
 
 
         new_conv2d = nn.Conv2d(
             num_channels, 
-            self.model_config.embed_dim, 
+            self.embed_dim, 
             kernel_size=patch_size, 
             stride=patch_size,
             bias=False

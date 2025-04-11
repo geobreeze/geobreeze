@@ -5,8 +5,8 @@ from torch.utils.data import Subset
 from geobreeze.engine.model import EvalModelWrapper
 from copy import deepcopy
 
-import geobreeze.models as models
-import geobreeze.datasets as datasets
+import geobreeze.models as gb_models
+import geobreeze.datasets as gb_datasets
 
 import torch
 import torch.nn as nn
@@ -40,7 +40,7 @@ def make_dataset(cfg, seed=21, **kwargs):
     transform_list = make_transform_list(trf_cfg)
 
     subset = cfg.pop('subset', -1)
-    ds = datasets.__dict__[cfg.pop('_target_')](**cfg, transform_list=transform_list, **kwargs)
+    ds = gb_datasets.__dict__[cfg.pop('_target_')](**cfg, transform_list=transform_list, **kwargs)
     # ds = instantiate(cfg, mode='hydra', transform_list=transform_list, **kwargs)
     ds = make_subset(ds, subset, seed=seed)
 
@@ -86,8 +86,8 @@ def make_subset(ds, subset, seed):
 
 def make_model(cfg) -> EvalModelWrapper:
     # cfg = deepcopy(cfg)
-    # return models.__dict__[cfg.pop('_target_')](**cfg)
-    return instantiate(cfg, mode='hydra')
+    return gb_models.__dict__[cfg.pop('_target_')](**cfg)
+    # return instantiate(cfg, mode='hydra')
 
 def make_optimizer(cfg, **kwargs):
     return instantiate(cfg, **kwargs)
