@@ -3,14 +3,14 @@
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
 
-#SBATCH --job-name=sinv_cor_senpa
+#SBATCH --job-name=sinv_euro_senpa
 #SBATCH --partition=accelerated
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=38        # default: 38
-#SBATCH --time=03:00:00
-#SBATCH --array=7-9,16,10,12
+#SBATCH --cpus-per-task=20        # default: 38
+#SBATCH --time=00:30:00
+#SBATCH --array=0-12
 
 
 # fastdevrun='--fastdevrun'
@@ -25,43 +25,31 @@ cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO
 
 
 
-dataset=corine
+dataset=m-eurosat
 all_tasks=(
-  " 1 [179]"
-  " 1 [138]"
-  " 1 [36]"
-  " 1 [76]"
-  " 1 [93]"
-  " 3 [80,161,189]"
-  " 3 [166,190,197]"
-  " 3 [3,26,123]"
-  " 3 [6,8,77]"
-  " 3 [26,28,88]"
-  " 5 [41,47,76,177,186]"
-  " 5 [73,79,112,145,201]"
-  " 5 [6,49,50,65,201]"
-  " 5 [11,33,58,62,198]"
-  " 5 [2,71,133,146,177]"
-  " 9 [50,58,90,106,136,150,151,152,194]"
-  " 9 [5,58,63,80,98,142,155,162,170]"
-  " 9 [15,38,63,104,132,139,163,173,200]"
-  " 9 [6,23,72,100,137,151,157,177,180]"
-  " 9 [13,50,86,108,109,143,162,165,174]"
-  "13 [0,22,52,72,80,122,126,143,145,155,178,185,192]"
-  "13 [2,36,43,64,78,86,92,101,107,127,170,190,196]"
-  "13 [1,39,44,64,78,87,106,127,139,144,147,153,179]"
-  "13 [18,57,70,71,118,121,155,158,159,181,186,187,193]"
-  "13 [1,5,6,9,43,77,130,141,151,161,163,165,177]"
+    " 1 [0]"
+    " 1 [1]"
+    " 1 [2]"
+    " 1 [3]"
+    " 1 [4]"
+    " 1 [5]"
+    " 1 [6]"
+    " 1 [7]"
+    " 1 [8]"
+    " 1 [9]"
+    " 1 [10]"
+    " 1 [11]"
+    " 1 [12]"
 )
 
 # model=panopticon
 # bsz=200
 
 # model=dofa
-# bsz=600
+# bsz=700
 
 model=senpamae
-bsz=300
+bsz=400
 
 
 
@@ -92,7 +80,7 @@ do
         +model=base/$model \
         +data=$dataset\
         +optim=linear_probe \
-        +output_dir=\'$ODIR/spec_inv/$dataset/linear_probe/$model/$num_bands/$ids\' \
+        +output_dir=\'$ODIR/spec_inv/${dataset}_1band/linear_probe/$model/$num_bands/$ids\' \
         dl.batch_size=$bsz \
         dl.num_workers=12 \
         num_gpus=1 \

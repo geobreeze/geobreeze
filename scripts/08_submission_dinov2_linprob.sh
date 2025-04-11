@@ -3,14 +3,14 @@
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
 
-#SBATCH --job-name=cls_dofa
+#SBATCH --job-name=dinov2
 #SBATCH --partition=accelerated
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=20        # default: 38
-#SBATCH --time=03:00:00
-#SBATCH --array=0-3
+#SBATCH --cpus-per-task=38        # default: 38
+#SBATCH --time=02:00:00
+#SBATCH --array=1
 
 # fastdevrun='--fastdevrun'
 # eval="eval.only_eval=True"
@@ -26,23 +26,11 @@ OLD_ODIR=/hkfs/work/workspace/scratch/tum_mhj8661-panopticon/dino_logs/fmplaygro
 
 all_tasks=(
 
-    # "m-so2sat-s1 softcon_2b -1 900"
-    # "m-so2sat-s1 croma_s1 -1 900"
-    # "m-so2sat-s1 panopticon -1 400"
-    # "m-so2sat-s1 dofa -1 500"
-    # "m-so2sat-s1 dinov2 [0,4,4] 900"
+    "hyperview dinov2 [63,32,9] 300 hyperview-SD -1"
+    "hyperview dinov2 [64,29,8] 300 hyperview-MD -1"
 
-    # "eurosat-sar softcon_2b -1 900"
-    # "eurosat-sar croma_s1 -1 900"
-    # "eurosat-sar panopticon -1 400"
-    # "eurosat-sar dofa -1 500"
-    # "eurosat-sar dinov2 [0,1,1] 900"
-
-
-    "corine-sd dofa -1 300 -1 corine-sd"
-    "corine-sd dofa -1 300 0.1 corine-sd-0.1"
-    "corine-md dofa -1 300 -1 corine-md"
-    "corine-md dofa -1 300 0.1 corine-md-0.1"
+    "corine dinov2 [47,28,14] 400 corine-MD 0.1"
+    "corine dinov2 [47,30,15] 400 corine-SD 0.1"
 )
 
 mode=linear_probe
@@ -72,9 +60,9 @@ do
     model=$2
     ids=$3
     batch_size=$4
-    train_subset=$5
-    val_subset=$5
-    ds_name_output_dir=$6
+    ds_str_output_dir=$5
+    train_subset=$6
+    val_subset=$6
 
     # potentially subset
     add_kwargs=""
@@ -90,7 +78,7 @@ do
         +model=base/$model \
         +data=$dataset\
         +optim=$mode \
-        +output_dir=\'$ODIR/doublecheck/$ds_name_output_dir/base/$model/\' \
+        +output_dir=\'$ODIR/submission/$ds_str_output_dir/base/$model/\' \
         dl.batch_size=$batch_size \
         dl.num_workers=8 \
         num_gpus=1 \

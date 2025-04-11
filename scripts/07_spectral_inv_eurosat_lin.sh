@@ -67,7 +67,7 @@ all_tasks=(
 # bsz=700
 
 model=senpamae
-bsz=500
+bsz=400
 
 
 

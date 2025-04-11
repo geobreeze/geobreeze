@@ -1,0 +1,22 @@
+defaults:
+- task/cls
+
+
+train:
+  _target_: GeoBenchDataset
+  ds_name: m-brick-kiln
+  split: train
+  transform: ${_vars.augm.cls.train}
+
+val:
+  _target_: GeoBenchDataset
+  ds_name: m-brick-kiln
+  split: val
+  transform: ${_vars.augm.cls.val}
+
+test:
+  _target_: GeoBenchDataset
+  ds_name: m-brick-kiln
+  split: test
+  transform: ${_vars.augm.cls.val}
+

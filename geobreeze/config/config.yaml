@@ -61,11 +61,11 @@ _vars:
         p: 0.5
         keepdim: true
       - _target_: RandomResizedCrop
-        size: ["${model.image_resolution}", "${model.image_resolution}"]
+        size: ["${model.image_resolution}","${model.image_resolution}"]
         scale: [0.8, 1.0]
         keepdim: true
 
       val:
       - _target_: Resize
-        size: "${model.image_resolution}"
+        size: ["${model.image_resolution}","${model.image_resolution}"]
         keepdim: true

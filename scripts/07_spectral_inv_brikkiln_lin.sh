@@ -3,14 +3,14 @@
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
 
-#SBATCH --job-name=sinv_cor_senpa
+#SBATCH --job-name=sinv_brikiln
 #SBATCH --partition=accelerated
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=38        # default: 38
-#SBATCH --time=03:00:00
-#SBATCH --array=7-9,16,10,12
+#SBATCH --time=2:15:00
+#SBATCH --array=0-62
 
 
 # fastdevrun='--fastdevrun'
@@ -25,45 +25,44 @@ cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO
 
 
 
-dataset=corine
-all_tasks=(
-  " 1 [179]"
-  " 1 [138]"
-  " 1 [36]"
-  " 1 [76]"
-  " 1 [93]"
-  " 3 [80,161,189]"
-  " 3 [166,190,197]"
-  " 3 [3,26,123]"
-  " 3 [6,8,77]"
-  " 3 [26,28,88]"
-  " 5 [41,47,76,177,186]"
-  " 5 [73,79,112,145,201]"
-  " 5 [6,49,50,65,201]"
-  " 5 [11,33,58,62,198]"
-  " 5 [2,71,133,146,177]"
-  " 9 [50,58,90,106,136,150,151,152,194]"
-  " 9 [5,58,63,80,98,142,155,162,170]"
-  " 9 [15,38,63,104,132,139,163,173,200]"
-  " 9 [6,23,72,100,137,151,157,177,180]"
-  " 9 [13,50,86,108,109,143,162,165,174]"
-  "13 [0,22,52,72,80,122,126,143,145,155,178,185,192]"
-  "13 [2,36,43,64,78,86,92,101,107,127,170,190,196]"
-  "13 [1,39,44,64,78,87,106,127,139,144,147,153,179]"
-  "13 [18,57,70,71,118,121,155,158,159,181,186,187,193]"
-  "13 [1,5,6,9,43,77,130,141,151,161,163,165,177]"
+dataset=m-brick-kiln
+ds_tasks=(
+  " 1 [12]"
+  " 1 [11]"
+  " 1 [2]"
+  " 1 [4]"
+  " 1 [10]"
+  " 3 [1,9,11]"
+  " 3 [5,8,9]"
+  " 3 [1,8,11]"
+  " 3 [1,4,8]"
+  " 3 [3,6,12]"
+  " 5 [1,2,6,8,9]"
+  " 5 [1,4,6,9,12]"
+  " 5 [0,1,3,4,10]"
+  " 5 [2,3,6,11,12]"
+  " 5 [2,3,5,7,9]"
+  " 9 [2,3,4,5,6,7,9,10,12]"
+  " 9 [1,3,4,5,6,7,8,10,12]"
+  " 9 [0,2,4,6,7,8,10,11,12]"
+  " 9 [0,1,2,3,5,6,9,10,11]"
+  " 9 [0,1,4,5,7,8,9,10,12]"
+  "13 [0,1,2,3,4,5,6,7,8,9,10,11,12]"
 )
 
-# model=panopticon
-# bsz=200
+model_tasks=(
+    "panopticon 200"
+    "dofa 700"
+    "senpamae 400"
+)
 
-# model=dofa
-# bsz=600
-
-model=senpamae
-bsz=300
-
-
+# create all tasks as cross product
+all_tasks=()
+for model in "${model_tasks[@]}"; do
+    for task in "${ds_tasks[@]}"; do
+        all_tasks+=("$model $task")
+    done
+done
 
 # process which tasks to execute
 if [ $# -eq 0 ]; then
@@ -82,10 +81,12 @@ for task_id in "${task_ids[@]}"
 do
 
     task=${all_tasks[$task_id]}
-    echo "Running Task: $model $bsz $task"
+    echo "Running Task: $task"
     set -- $task
-    num_bands=$1
-    ids=$2
+    model=$1
+    bsz=$2
+    num_bands=$3
+    ids=$4
 
 
     $cmd \
@@ -94,12 +95,13 @@ do
         +optim=linear_probe \
         +output_dir=\'$ODIR/spec_inv/$dataset/linear_probe/$model/$num_bands/$ids\' \
         dl.batch_size=$bsz \
-        dl.num_workers=12 \
+        dl.num_workers=8 \
         num_gpus=1 \
         seed=21 \
         +data.train.band_ids=$ids \
         +data.val.band_ids=$ids \
         +data.test.band_ids=$ids \
+        optim.check_val_every_n_epoch=100 \
         # overwrite=true \
 
 done

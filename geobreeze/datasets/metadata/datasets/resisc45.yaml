@@ -5,29 +5,27 @@ multilabel: false
 image_resolution: 224
 
 bands:
-- name: Red
-  gaussian:
-    mu: 665.0
-    sigma: 16.0 # unknown
-- name: Green
-  gaussian:
-    mu: 560.0
-    sigma: 16.0 # unknown
-- name: Blue
-  gaussian:
-    mu: 490.0
-    sigma: 16.0 # unknown
+- id: sentinel2/B04
+- id: sentinel2/B03
+- id: sentinel2/B02
+
+# exact configuration of resisc unknown. We take the sentinel2 rgb bands for now. 
+# bands:
+# - name: Red
+#   gaussian:
+#     mu: 665.0
+#     sigma: 12.0 # unknown
+# - name: Green
+#   gaussian:
+#     mu: 560.0
+#     sigma: 12.0 # unknown
+# - name: Blue
+#   gaussian:
+#     mu: 490.0
+#     sigma: 12.0 # unknown
+# srf_filename: resisc45.npy
 
 
 # gsd: varies between images
 
 data_path: ${oc.env:DATASETS_DIR}/resisc45
-
-
-#hacky defaults
-# band_gsds: [10, 10, 10]
-# senpamae_channels:
-#   - 3
-#   - 2
-#   - 1
-# senpamae_srf_name: rfs_sentinel2_a_13b.npy

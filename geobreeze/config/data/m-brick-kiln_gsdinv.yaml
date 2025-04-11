@@ -4,7 +4,7 @@ defaults:
 
 train:
   _target_: GeoBenchDataset
-  ds_name: m-eurosat
+  ds_name: m-brick-kiln
   split: train
   transform: 
   - _target_: Resize
@@ -16,7 +16,7 @@ train:
 
 val:
   _target_: GeoBenchDataset
-  ds_name: m-eurosat
+  ds_name: m-brick-kiln
   split: val
   transform: 
   - _target_: Resize
@@ -26,10 +26,9 @@ val:
     size: "${model.image_resolution}"
     keepdim: true
 
-
 test:
   _target_: GeoBenchDataset
-  ds_name: m-eurosat
+  ds_name: m-brick-kiln
   split: test
   transform: 
   - _target_: Resize
@@ -38,5 +37,4 @@ test:
   - _target_: Resize
     size: "${model.image_resolution}"
     keepdim: true
-
 

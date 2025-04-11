@@ -3,50 +3,57 @@
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
 
-#SBATCH --job-name=cls_dofa
+#SBATCH --job-name=gsd_inv_brik_lin
 #SBATCH --partition=accelerated
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=20        # default: 38
-#SBATCH --time=03:00:00
-#SBATCH --array=0-3
+#SBATCH --time=01:30:00
+#SBATCH --array=0-11
 
-# fastdevrun='--fastdevrun'
-# eval="eval.only_eval=True"
 
 # ---------- HOREKA ------------
 # eval_cmd='srun -K1 --export=ALL /home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval2/bin/python /home/hk-project-pai00028/tum_mhj8661/code/geobreeze/geobreeze/main.py'
 REPO_PATH=/home/hk-project-pai00028/tum_mhj8661/code/geobreeze
 export $(cat $REPO_PATH/.env)
 cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO_PATH/geobreeze/main.py"
-OLD_ODIR=/hkfs/work/workspace/scratch/tum_mhj8661-panopticon/dino_logs/fmplayground
 # -----------------------------
 
+# m-eurosat
 
-all_tasks=(
-
-    # "m-so2sat-s1 softcon_2b -1 900"
-    # "m-so2sat-s1 croma_s1 -1 900"
-    # "m-so2sat-s1 panopticon -1 400"
-    # "m-so2sat-s1 dofa -1 500"
-    # "m-so2sat-s1 dinov2 [0,4,4] 900"
-
-    # "eurosat-sar softcon_2b -1 900"
-    # "eurosat-sar croma_s1 -1 900"
-    # "eurosat-sar panopticon -1 400"
-    # "eurosat-sar dofa -1 500"
-    # "eurosat-sar dinov2 [0,1,1] 900"
-
-
-    "corine-sd dofa -1 300 -1 corine-sd"
-    "corine-sd dofa -1 300 0.1 corine-sd-0.1"
-    "corine-md dofa -1 300 -1 corine-md"
-    "corine-md dofa -1 300 0.1 corine-md-0.1"
+dataset=m-brick-kiln_resize
+dataset_folder_name=m-brick-kiln
+gsd_mode=only_val
+full_size=64
+tasks=(
+    "100 64"
+    # "50 32"
+    # "25 16"
+    # "12.5 8"
+    # "16.6 11"
 )
 
-mode=linear_probe
+models=(
+    # "panopticon -1 200"
+    # "dofa -1 700"
+    # "senpamae -1 400"
+    # "dinov2 [3,2,1] 300"
+)
 
+
+
+
+
+# Generate all tasks as the cross product of models and tasks
+all_tasks=()
+for model in "${models[@]}"
+do
+    for task in "${tasks[@]}"
+    do
+        all_tasks+=("$model $task")
+    done
+done
 
 # process which tasks to execute
 if [ $# -eq 0 ]; then
@@ -60,21 +67,17 @@ else
 fi
 
 
-# execute tasks
+
 for task_id in "${task_ids[@]}"
 do
-
     task=${all_tasks[$task_id]}
     echo "Running Task: $task"
-
     set $task
-    dataset=$1
-    model=$2
-    ids=$3
-    batch_size=$4
-    train_subset=$5
-    val_subset=$5
-    ds_name_output_dir=$6
+    model=$1
+    ids=$2
+    bsz=$3
+    prc=$4
+    size=$5
 
     # potentially subset
     add_kwargs=""
@@ -84,22 +87,33 @@ do
             +data.val.band_ids=$ids \
             +data.test.band_ids=$ids "
     fi
+    # nchns=$(echo "$ids" | awk -F',' '{print NF}')
+
+    # set gsdmode
+    if [ "$gsd_mode" == "only_val" ]; then
+        train_size=$full_size
+    elif [ "$gsd_mode" == "also_train" ]; then
+        train_size=$size
+    else
+        echo "Error: Invalid gsd_mode value. Must be 'only_val' or 'also_train'."
+        exit 1
+    fi
 
     # main command
     $cmd \
         +model=base/$model \
         +data=$dataset\
-        +optim=$mode \
-        +output_dir=\'$ODIR/doublecheck/$ds_name_output_dir/base/$model/\' \
-        dl.batch_size=$batch_size \
-        dl.num_workers=8 \
+        +optim=linear_probe \
+        +output_dir=\'$ODIR/gsd_inv/also_train/$dataset_folder_name/linear_probe/$model/$prc/\' \
+        dl.batch_size=$bsz \
+        dl.num_workers=10 \
         num_gpus=1 \
         seed=21 \
-        ++data.train.subset=$train_subset \
-        ++data.val.subset=$val_subset \
+        data.train.transform.0.size=$train_size \
+        data.val.transform.0.size=$size \
+        data.test.transform.0.size=$size \
         $add_kwargs \
-        # optim.epochs=1 \
-        # +output_dir=\'$OLD_ODIR/t1_v3/$dataset/base/$model/\' \
+        # data.train.transform.0.size=$size \
         # overwrite=true \
 
 done

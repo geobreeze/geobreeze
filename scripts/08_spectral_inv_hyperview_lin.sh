@@ -3,14 +3,14 @@
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
 
-#SBATCH --job-name=sinv_hyp_senpa
+#SBATCH --job-name=sinv_hyp_dofa
 #SBATCH --partition=accelerated
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=20        # default: 38
+#SBATCH --cpus-per-task=38        # default: 38
 #SBATCH --time=00:30:00
-#SBATCH --array=0-24
+#SBATCH --array=3,7,12,13
 
 
 # fastdevrun='--fastdevrun'
@@ -57,11 +57,11 @@ all_tasks=(
 # model=panopticon
 # bsz=200
 
-# model=dofa
-# bsz=600
+model=dofa
+bsz=400
 
-model=senpamae
-bsz=500
+# model=senpamae
+# bsz=500
 
 
 

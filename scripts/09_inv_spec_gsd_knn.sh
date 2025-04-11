@@ -3,14 +3,15 @@
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
 
-#SBATCH --job-name=cls_dofa
+#SBATCH --job-name=gsd_inv
 #SBATCH --partition=accelerated
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=20        # default: 38
-#SBATCH --time=03:00:00
-#SBATCH --array=0-3
+#SBATCH --time=00:10:00
+#SBATCH --array=0-25
+
 
 # fastdevrun='--fastdevrun'
 # eval="eval.only_eval=True"
@@ -20,33 +21,67 @@
 REPO_PATH=/home/hk-project-pai00028/tum_mhj8661/code/geobreeze
 export $(cat $REPO_PATH/.env)
 cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO_PATH/geobreeze/main.py"
-OLD_ODIR=/hkfs/work/workspace/scratch/tum_mhj8661-panopticon/dino_logs/fmplayground
 # -----------------------------
 
+# m-eurosat
 
-all_tasks=(
+dataset=m-eurosat_gsdinv
+models=(
 
-    # "m-so2sat-s1 softcon_2b -1 900"
-    # "m-so2sat-s1 croma_s1 -1 900"
-    # "m-so2sat-s1 panopticon -1 400"
-    # "m-so2sat-s1 dofa -1 500"
-    # "m-so2sat-s1 dinov2 [0,4,4] 900"
+    # "panopticon true [0]"
+    # "panopticon true [1]"
+    # "panopticon true [2]"
+    # "panopticon true [3]"
+    # "panopticon true [4]"
+    # "panopticon true [5]"
+    # "panopticon true [6]"
+    # "panopticon true [7]"
+    # "panopticon true [8]"
+    # "panopticon true [9]"
+    # "panopticon true [10]"
+    # "panopticon true [11]"
+    # "panopticon true [12]"
 
-    # "eurosat-sar softcon_2b -1 900"
-    # "eurosat-sar croma_s1 -1 900"
-    # "eurosat-sar panopticon -1 400"
-    # "eurosat-sar dofa -1 500"
-    # "eurosat-sar dinov2 [0,1,1] 900"
+    # "dofa true [0]"
+    # "dofa true [1]" 
+    # "dofa true [2]"
+    # "dofa true [3]"
+    # "dofa true [4]"
+    # "dofa true [5]"
+    # "dofa true [6]"
+    # "dofa true [7]"
+    # "dofa true [8]"
+    # "dofa true [9]"
+    # "dofa true [10]"
+    # "dofa true [11]"
+    # "dofa true [12]"
 
+    # "dinov2 true [3,2,1]"
+    # "dofa true [3,2,1]"
+    # "panopticon true [3,2,1]"
 
-    "corine-sd dofa -1 300 -1 corine-sd"
-    "corine-sd dofa -1 300 0.1 corine-sd-0.1"
-    "corine-md dofa -1 300 -1 corine-md"
-    "corine-md dofa -1 300 0.1 corine-md-0.1"
+    "dofa false -1"
+    "panopticon false -1"
 )
 
-mode=linear_probe
+tasks=(
+    # "50 32"
+    # "25 16"
+    "16.6 11"
+    # "12.5 8"
+)
 
+
+
+# Generate all tasks as the cross product of models and tasks
+all_tasks=()
+for model in "${models[@]}"
+do
+    for task in "${tasks[@]}"
+    do
+        all_tasks+=("$model $task")
+    done
+done
 
 # process which tasks to execute
 if [ $# -eq 0 ]; then
@@ -60,25 +95,21 @@ else
 fi
 
 
-# execute tasks
+
 for task_id in "${task_ids[@]}"
 do
-
     task=${all_tasks[$task_id]}
     echo "Running Task: $task"
-
     set $task
-    dataset=$1
-    model=$2
+    model=$1
+    subset=$2
     ids=$3
-    batch_size=$4
-    train_subset=$5
-    val_subset=$5
-    ds_name_output_dir=$6
+    prc=$4
+    size=$5
 
     # potentially subset
     add_kwargs=""
-    if [ "$ids" != "-1" ]; then
+    if [ "$subset" = true ]; then
         add_kwargs="$add_kwargs \
             +data.train.band_ids=$ids \
             +data.val.band_ids=$ids \
@@ -89,17 +120,16 @@ do
     $cmd \
         +model=base/$model \
         +data=$dataset\
-        +optim=$mode \
-        +output_dir=\'$ODIR/doublecheck/$ds_name_output_dir/base/$model/\' \
-        dl.batch_size=$batch_size \
+        +optim=knn \
+        +output_dir=\'$ODIR/gsd_inv2/also_train/m-eurosat/$model/$prc/$ids\' \
+        dl.batch_size=100 \
         dl.num_workers=8 \
         num_gpus=1 \
         seed=21 \
-        ++data.train.subset=$train_subset \
-        ++data.val.subset=$val_subset \
+        data.train.transform.0.size=$size \
+        data.val.transform.0.size=$size \
+        data.test.transform.0.size=$size \
         $add_kwargs \
-        # optim.epochs=1 \
-        # +output_dir=\'$OLD_ODIR/t1_v3/$dataset/base/$model/\' \
         # overwrite=true \
 
 done

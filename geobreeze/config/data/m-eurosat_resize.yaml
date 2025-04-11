@@ -10,22 +10,28 @@ train:
   - _target_: Resize
     size: -1
     keepdim: true
-  - _target_: Resize
-    size: "${model.image_resolution}"
+  - _target_: RandomHorizontalFlip
+    p: 0.5
+    keepdim: true
+  - _target_: RandomVerticalFlip
+    p: 0.5
+    keepdim: true
+  - _target_: RandomResizedCrop
+    size: ["${model.image_resolution}","${model.image_resolution}"]
+    scale: [0.8, 1.0]
     keepdim: true
 
 val:
   _target_: GeoBenchDataset
   ds_name: m-eurosat
   split: val
-  transform: 
+  transform:
   - _target_: Resize
     size: -1
     keepdim: true
   - _target_: Resize
     size: "${model.image_resolution}"
     keepdim: true
-
 
 test:
   _target_: GeoBenchDataset
@@ -38,5 +44,4 @@ test:
   - _target_: Resize
     size: "${model.image_resolution}"
     keepdim: true
-
 
