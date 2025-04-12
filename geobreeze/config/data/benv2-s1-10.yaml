@@ -1,0 +1,32 @@
+defaults:
+- task/cls_multilabel
+
+
+train:
+  _target_: BenV2Dataset
+  root: ${oc.env:DATASETS_DIR}/benv2
+  split: train
+  bands: s1
+  subset: 0.1
+  metainfo:
+    chn_ids: gaussian.mu
+  transform: ${_vars.augm.cls.train}
+
+val:
+  _target_: BenV2Dataset
+  root: ${oc.env:DATASETS_DIR}/benv2
+  split: val
+  bands: s1
+  metainfo:
+    chn_ids: gaussian.mu
+  transform: ${_vars.augm.cls.val}
+
+test:
+  _target_: BenV2Dataset
+  root: ${oc.env:DATASETS_DIR}/benv2
+  split: test
+  bands: s1
+  metainfo:
+    chn_ids: gaussian.mu
+  transform: ${_vars.augm.cls.val}
+

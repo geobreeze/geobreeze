@@ -27,16 +27,17 @@ class BaseDataset(torch.utils.data.Dataset):
 
     def _calibrate_metainfo(self, metainfo):
         """ set which metadata is passed with the sample"""
-        if not hasattr(self, '_default_meta_info'):
-            self._default_meta_info = metainfo
+        # if not hasattr(self, '_default_meta_info'):
+        #     self._default_meta_info = metainfo
 
-        metainfo = metainfo or self._default_meta_info
+        # metainfo = metainfo or self._default_meta_info
 
         metainfo_bands = {}
         for new_k, old_k in metainfo.items():
             data = [OmegaConf.select(band, old_k) for band in self.ds_config.bands]
             if isinstance(data[0], (int, float)):
                 data = torch.tensor(data, dtype=torch.float32)
+            
             metainfo_bands[new_k] = data
         self.metainfo_bands = metainfo_bands
 

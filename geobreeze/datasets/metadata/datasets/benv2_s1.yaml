@@ -1,0 +1,7 @@
+gsd: 10.
+img_size: 120
+num_classes: -1 # set in the __init__, 19 or 43
+
+bands:
+- id: sentinel1/B01
+- id: sentinel1/B02
