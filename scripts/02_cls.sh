@@ -3,14 +3,14 @@
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
 
-#SBATCH --job-name=cls_corine_senpamae
+#SBATCH --job-name=cls_corine_dinov2
 #SBATCH --partition=accelerated
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=38        # default: 38
-#SBATCH --time=01:00:00
-#SBATCH --array=0
+#SBATCH --time=03:00:00
+#SBATCH --array=0-1
 
 # fastdevrun='--fastdevrun'
 # eval="eval.only_eval=True"
@@ -49,8 +49,16 @@ all_tasks=(
 
     # "corine-sd senpamae -1 300 -1 corine-sd"
     # "corine-sd senpamae -1 300 0.1 corine-sd-0.1"
-    "corine-md senpamae -1 300 -1 corine-md"
+    # "corine-md senpamae -1 300 -1 corine-md"
     # "corine-md senpamae -1 300 0.1 corine-md-0.1"
+
+    # "benv2-s1-10 dinov2 [0,1,1] 400 -1 benv2-s1-10"
+    # "benv2-s1-10 dinov2 [0,1,0] 400 -1 benv2-s1-10"
+    # "benv2-s1-10 dinov2 [1,0,0] 400 -1 benv2-s1-10"
+    # "benv2-s1-10 dinov2 [1,0,1] 400 -1 benv2-s1-10"
+
+    "corine dinov2 [47,28,14] 400 -1 corine-MD"
+    "corine dinov2 [47,30,15] 400 -1 corine-SD"
 )
 
 mode=linear_probe
@@ -80,8 +88,7 @@ do
     model=$2
     ids=$3
     batch_size=$4
-    train_subset=$5
-    val_subset=$5
+    subset=$5
     ds_name_output_dir=$6
 
     # potentially subset
@@ -91,6 +98,13 @@ do
             +data.train.band_ids=$ids \
             +data.val.band_ids=$ids \
             +data.test.band_ids=$ids "
+    fi
+
+    if [ "$subset" != "-1" ]; then
+        add_kwargs="$add_kwargs \
+            ++data.train.subset=$subset \
+            ++data.val.subset=$subset \
+            ++data.test.subset=$subset "
     fi
 
     # main command
@@ -103,8 +117,6 @@ do
         dl.num_workers=10 \
         num_gpus=1 \
         seed=21 \
-        ++data.train.subset=$train_subset \
-        ++data.val.subset=$val_subset \
         optim.check_val_every_n_epoch=100 \
         $add_kwargs \
         # optim.epochs=1 \

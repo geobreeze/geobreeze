@@ -10,7 +10,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=20        # default: 38
 #SBATCH --time=00:15:00
-#SBATCH --array=0-7
+#SBATCH --array=0-3
 
 
 # ---------- HOREKA ------------
@@ -24,7 +24,7 @@ cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO
 
 dataset=resisc45_gsdinv
 dataset_folder_name=resisc45
-gsd_mode=only_val
+gsd_mode=also_train
 full_size=224
 tasks=(
     "100 224"
@@ -37,9 +37,9 @@ models=(
     # "panopticon -1 200"
     # "dofa -1 700"
     # "senpamae -1 400"
-    # "dinov2 [3,2,1] 300"
-    "croma_12b [0,1,2,3,4,5,6,7,8,9,11,12] 200"
-    "softcon_13b -1 300"
+    # "dinov2 -1 300"
+    "anysat_spot -1 100"
+    
 )
 
 
@@ -92,8 +92,16 @@ do
     # set gsdmode
     if [ "$gsd_mode" == "only_val" ]; then
         train_size=$full_size
+        val_size=$size
+        test_size=$size
     elif [ "$gsd_mode" == "also_train" ]; then
         train_size=$size
+        val_size=$size
+        test_size=$size
+    elif [ "$gsd_mode" == "only_train" ]; then
+        train_size=$size
+        val_size=$full_size
+        test_size=$full_size
     else
         echo "Error: Invalid gsd_mode value. Must be 'only_val' or 'also_train'."
         exit 1
@@ -110,8 +118,8 @@ do
         num_gpus=1 \
         seed=21 \
         data.train.transform.0.size=$train_size \
-        data.val.transform.0.size=$size \
-        data.test.transform.0.size=$size \
+        data.val.transform.0.size=$val_size \
+        data.test.transform.0.size=$test_size \
         $add_kwargs \
         # overwrite=true \
 

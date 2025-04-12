@@ -24,7 +24,7 @@ cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO
 
 dataset=m-brick-kiln_resize
 dataset_folder_name=m-brick-kiln
-gsd_mode=only_val
+gsd_mode=only_train
 full_size=64
 tasks=(
     "100 64"
@@ -40,7 +40,7 @@ models=(
     # "senpamae -1 400"
     # "dinov2 [3,2,1] 300"
     "anysat_s2 [1,2,3,4,5,6,7,8,11,12] 100"
-    "anysat_s2 [0,1,2,3,4,5,6,7,8,9,] 100"
+    "anysat_s2 [0,1,2,3,4,5,6,7,8,9] 100"
 )
 
 
@@ -94,8 +94,16 @@ do
     # set gsdmode
     if [ "$gsd_mode" == "only_val" ]; then
         train_size=$full_size
+        val_size=$size
+        test_size=$size
     elif [ "$gsd_mode" == "also_train" ]; then
         train_size=$size
+        val_size=$size
+        test_size=$size
+    elif [ "$gsd_mode" == "only_train" ]; then
+        train_size=$size
+        val_size=$full_size
+        test_size=$full_size
     else
         echo "Error: Invalid gsd_mode value. Must be 'only_val' or 'also_train'."
         exit 1
@@ -106,14 +114,14 @@ do
         +model=base/$model \
         +data=$dataset\
         +optim=linear_probe \
-        +output_dir=\'$ODIR/gsd_inv/also_train/$dataset_folder_name/linear_probe/$model/$prc/\' \
+        +output_dir=\'$ODIR/gsd_inv/$gsd_mode/$dataset_folder_name/linear_probe/$model/$prc/\' \
         dl.batch_size=$bsz \
         dl.num_workers=10 \
         num_gpus=1 \
         seed=21 \
         data.train.transform.0.size=$train_size \
-        data.val.transform.0.size=$size \
-        data.test.transform.0.size=$size \
+        data.val.transform.0.size=$val_size \
+        data.test.transform.0.size=$test_size \
         $add_kwargs \
         # data.train.transform.0.size=$size \
         # overwrite=true \

@@ -9,8 +9,8 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=20        # default: 38
-#SBATCH --time=00:40:00
-#SBATCH --array=0-7
+#SBATCH --time=00:20:00
+#SBATCH --array=0-3
 
 
 # ---------- HOREKA ------------
@@ -40,8 +40,11 @@ models=(
     # "dofa -1 700"
     # "senpamae -1 400"
     # "dinov2 [3,2,1] 300"
-    "croma_12b [0,1,2,3,4,5,6,7,8,9,11,12] 200"
-    "softcon_13b -1 300"
+    # "croma_12b [0,1,2,3,4,5,6,7,8,9,11,12] 200"
+    # "softcon_13b -1 300"
+    # "anysat_s2 [1,2,3,4,5,6,7,8,11,12] 100"
+    "galileo_s2 [1,2,3,4,5,6,7,8,11,12] 100"
+
 )
 
 

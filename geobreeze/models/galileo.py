@@ -2,8 +2,8 @@ import torch.nn as nn
 import torch
 from torch import Tensor
 from einops import rearrange
-# from geobreeze.models.galileo.util import construct_galileo_input, MaskedOutput
-# from .galileo.model import Encoder
+from .galileo_src.util import construct_galileo_input, MaskedOutput
+from .galileo_src.model import Encoder
 
 from typing import Any
 from pathlib import Path
@@ -12,6 +12,9 @@ import os
 from torchvision.datasets.utils import download_url
 from geobreeze.engine.model import EvalModelWrapper
 
+import logging
+
+logger = logging.getLogger('eval')
 
 EXPECTED_CHANNELS = {
     "s2": 10,
@@ -20,10 +23,15 @@ EXPECTED_CHANNELS = {
 
 
 class Galileo(EvalModelWrapper):
-    def _load_encoder(self, blk_indices):
+    def _load_encoder(
+            self, 
+            blk_indices: str,
+            pretrained_path: str,
+            input_key: str,
+        ):
         URL = "https://hf.co/nasaharvest/galileo/resolve/main/models/base/{}"
-        pretrained_path = self.model_config.get("pretrained_path", None)
-        print(f"PRETRAINED PATH: {pretrained_path}")
+        logger.info(f"PRETRAINED PATH: {pretrained_path}")
+        self.input_key = input_key
 
         if pretrained_path and not os.path.exists(pretrained_path):
             # Download weights and config if they don't exist.
@@ -44,9 +52,8 @@ class Galileo(EvalModelWrapper):
         self.norm = self.encoder.norm
 
         self.galileo_train_config = OmegaConf.load(os.path.join(os.path.dirname(path), "config.json"))
-
-        print(self.galileo_train_config.keys())
-        print(self.galileo_train_config)
+        # print(self.galileo_train_config.keys())
+        # print(self.galileo_train_config)
 
         self.exit_token_cfg = self.galileo_train_config.training.token_exit_cfg
         self.target_exit_after = self.galileo_train_config.training.target_exit_after
@@ -116,8 +123,8 @@ class Galileo(EvalModelWrapper):
     def get_blocks(self, x_dict):
         self.cache = []
         self.encoder(
-            patch_size=self.model_config.patch_size, 
-            **self.format_input(x_dict['imgs'], self.model_config.input_key))
+            patch_size=self.patch_size, 
+            **self.format_input(x_dict['imgs'], self.input_key))
         blocks = self.cache
         self.cache = [] 
         return blocks
@@ -129,7 +136,7 @@ class Galileo(EvalModelWrapper):
         
         blocks = self.get_blocks(x)
 
-        patch_size = self.model_config.patch_size
+        patch_size = self.patch_size
         h = H // patch_size
         w = W // patch_size
 
