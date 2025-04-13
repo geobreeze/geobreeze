@@ -6,6 +6,7 @@ from .hyperview import Hyperview
 from .spectral_earth import CorineDataset
 from .spacenet1 import SpaceNet1Dataset
 from .benv2 import BenV2Dataset
+from .digital_typhoon import DigitalTyphoon
 
 # from geobreeze.datasets.geobench_wrapper import GeoBenchDataset
 # from geobreeze.datasets.resisc_wrapper import Resics45Dataset

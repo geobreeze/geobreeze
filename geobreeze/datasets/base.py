@@ -35,7 +35,8 @@ class BaseDataset(torch.utils.data.Dataset):
         metainfo_bands = {}
         for new_k, old_k in metainfo.items():
             data = [OmegaConf.select(band, old_k) for band in self.ds_config.bands]
-            if isinstance(data[0], (int, float)):
+            if not isinstance(data[0], str):
+                data = [d or torch.nan for d in data]
                 data = torch.tensor(data, dtype=torch.float32)
             
             metainfo_bands[new_k] = data

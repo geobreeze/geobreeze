@@ -8,6 +8,8 @@ train:
   split: train
   band_ids: [0, 4]
   transform: ${_vars.augm.cls.train}
+  metainfo:
+    chn_ids: gaussian.mu
 
 val:
   _target_: GeoBenchDataset
@@ -15,6 +17,8 @@ val:
   split: val
   band_ids: [0, 4]
   transform: ${_vars.augm.cls.val}
+  metainfo:
+    chn_ids: gaussian.mu
 
 test:
   _target_: GeoBenchDataset
@@ -22,4 +26,5 @@ test:
   split: test
   band_ids: [0, 4]
   transform: ${_vars.augm.cls.val}
-
+  metainfo:
+    chn_ids: gaussian.mu
