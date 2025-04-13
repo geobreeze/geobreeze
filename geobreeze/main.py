@@ -196,7 +196,10 @@ def do_linear_probe(cfg, model: EvalModelWrapper, datasets: dict):
             key = d['iteration']
         metrics_by_cls[cls][key] = {k:v for k,v in d.items() if k not in ['prefix','iteration','classifier']}
 
-    if cfg.logger == 'mlflow':
+    if cfg.logger is None or cfg.logger == 'none':
+        pass
+    
+    elif cfg.logger == 'mlflow':
         logger.info('Logging to mlflow')
         import mlflow
         mlflow.set_tracking_uri(f"file:{os.path.join(os.environ['ODIR'], '_mlruns')}")
@@ -225,7 +228,7 @@ def do_linear_probe(cfg, model: EvalModelWrapper, datasets: dict):
                     else:
                         for name, val in metrics.items():
                             mlflow.log_metric(f'{i}/{name}', val)
-            
+
     else:
         raise NotImplementedError()
     
@@ -250,8 +253,11 @@ def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
         raise NotImplementedError()
 
     # Setup logger
-    if cfg.logger == "mlflow":
-        logger = MLFlowLogger(
+    if cfg.logger is None or cfg.logger == 'none':
+        exp_logger = None
+    
+    elif cfg.logger == "mlflow":
+        exp_logger = MLFlowLogger(
             experiment_name=experiment_name,
             run_name=run_name,
             tracking_uri=f"file:{os.path.join(os.environ['ODIR'], '_mlruns')}",)
@@ -274,7 +280,7 @@ def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
 
     # Initialize trainer
     trainer = Trainer(
-        logger=logger,
+        logger=exp_logger,
         callbacks=callbacks,
         max_epochs=cfg.optim.epochs,
         num_sanity_val_steps=0,
