@@ -3,7 +3,7 @@
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
 
-#SBATCH --job-name=replace_pe
+#SBATCH --job-name=replace_pe_adamw
 #SBATCH --partition=accelerated
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
@@ -105,8 +105,8 @@ do
     $cmd \
         +model=base/$model \
         +data=$dataset\
-        +optim=$optim \
-        +output_dir=\'$ODIR/domain_adapt/pe/$dataset/$optim/$model/$ids\' \
+        +optim=frozen_backbone_adamw \
+        +output_dir=\'$ODIR/domain_adapt/pe_adamw/$dataset/$optim/$model/$ids\' \
         dl.batch_size=$bsz \
         dl.num_workers=8 \
         optim.base_lr=$lr \

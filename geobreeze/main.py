@@ -344,6 +344,8 @@ def main(cfg: DictConfig):
         return
 
     datasets = {split: make_dataset(cfg.data[split], seed=cfg.seed) for split in ['train','val','test']}
+    for split, ds in datasets.items():
+        logger.info(f'{split} dataset len is {len(ds)}')
     model = make_model(cfg.model)
 
     # execute training with correct engine

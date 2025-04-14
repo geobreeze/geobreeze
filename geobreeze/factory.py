@@ -15,7 +15,7 @@ import torch.optim as optim
 import kornia.augmentation as K
 import kornia
 from omegaconf import ListConfig, OmegaConf
-
+from geobreeze.datasets.utils import augmentations as gb_augmentations
 
 def instantiate(cfg, mode='eval', **kwargs):
     if mode == 'globals':
@@ -37,11 +37,18 @@ def make_dataset(cfg, seed=21, **kwargs):
     if isinstance(cfg, list) or isinstance(cfg, ListConfig):
         return [make_dataset(c, seed=seed, **kwargs) for c in cfg]
 
-    trf_cfg = cfg.pop('transform', [])
+    trf_cfg = cfg.pop('transform', []) 
     transform_list = make_transform_list(trf_cfg)
 
+    withmetainfo_trf_cfg = cfg.pop('withmetainfo_trf', [])
+    withmetainfo_trf_list = make_transform_list(withmetainfo_trf_cfg)
+
     subset = cfg.pop('subset', -1)
-    ds = gb_datasets.__dict__[cfg.pop('_target_')](**cfg, transform_list=transform_list, **kwargs)
+    ds = gb_datasets.__dict__[cfg.pop('_target_')](
+        **cfg, 
+        **kwargs,
+        transform_list = transform_list, 
+        withmetainfo_trf_list = withmetainfo_trf_list, )
     # ds = instantiate(cfg, mode='hydra', transform_list=transform_list, **kwargs)
     ds = make_subset(ds, subset, seed=seed)
 
@@ -50,13 +57,17 @@ def make_dataset(cfg, seed=21, **kwargs):
 def make_transform_list(cfg_list, **kwargs):
     """ kwargs can be called by the configs, e.g. size"""
     transform_list = []
+    cfg_list = cfg_list or []
     for cfg in cfg_list: 
         cfg = deepcopy(cfg)
         cfg = OmegaConf.to_container(cfg, resolve=True)
         # for k,v in cfg.items():
         #     print(f'cfg: {k}: {type(v)}, {v}')
         # trf = instantiate(cfg, mode='hydra')
-        trf = kornia.augmentation.__dict__[cfg.pop('_target_')](**cfg, **kwargs)
+        if cfg['_target_'].startswith('custom.'):
+            trf = gb_augmentations.__dict__[cfg.pop('_target_')[7:]](**cfg, **kwargs)
+        else:
+            trf = kornia.augmentation.__dict__[cfg.pop('_target_')](**cfg, **kwargs)
         transform_list.append(trf)
     return transform_list
 

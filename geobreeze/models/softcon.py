@@ -72,7 +72,7 @@ class SoftCon(EvalModelWrapper):
 
     def replace_pe(self, num_channels):
 
-        patch_size = self.model_config.patch_size
+        patch_size = self.patch_size
         new_conv2d = nn.Conv2d(
             num_channels, 
             self.encoder.num_features, 

@@ -13,14 +13,18 @@ class BaseDataset(torch.utils.data.Dataset):
             self, 
             ds_name, 
             band_ids=None, 
-            metainfo: dict={'chn_ids': 'gaussian.mu', 'gsd':'GSD', 'srf_filename': 'srf_filename'}):
+            metainfo: dict={'chn_ids': 'gaussian.mu', 'gsd':'GSD', 'srf_filename': 'srf_filename'},
+            withmetainfo_trf_list: list = [],
+        
+        ):
 
         self.ds_name = ds_name
         ds_config = OmegaConf.create(load_ds_cfg(ds_name))
         self.ds_config = ds_config
         self.num_classes = ds_config['metainfo']['num_classes']
         self.calibrate(metainfo=metainfo, band_ids=band_ids)
-    
+        self.withmetainfo_trf_list = withmetainfo_trf_list
+
     def calibrate(self, metainfo=None, band_ids=None):
         self._calibrate_metainfo(metainfo)
         self._calibrate_bands(band_ids)
@@ -71,6 +75,10 @@ class BaseDataset(torch.utils.data.Dataset):
             x = x[self.band_ids]
 
         x = dict(imgs=x, band_ids=torch.tensor(self.band_ids), **self._metainfo_bands_output_order)
+
+        for trf in self.withmetainfo_trf_list:
+            x = trf(x)
+
         return x, label
 
     def __len__(self):

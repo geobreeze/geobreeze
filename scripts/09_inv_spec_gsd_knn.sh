@@ -28,19 +28,19 @@ cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO
 dataset=m-eurosat_gsdinv
 models=(
 
-    # "panopticon true [0]"
-    # "panopticon true [1]"
-    # "panopticon true [2]"
-    # "panopticon true [3]"
-    # "panopticon true [4]"
-    # "panopticon true [5]"
-    # "panopticon true [6]"
-    # "panopticon true [7]"
-    # "panopticon true [8]"
-    # "panopticon true [9]"
-    # "panopticon true [10]"
-    # "panopticon true [11]"
-    # "panopticon true [12]"
+    "panopticon true [0]"
+    "panopticon true [1]"
+    "panopticon true [2]"
+    "panopticon true [3]"
+    "panopticon true [4]"
+    "panopticon true [5]"
+    "panopticon true [6]"
+    "panopticon true [7]"
+    "panopticon true [8]"
+    "panopticon true [9]"
+    "panopticon true [10]"
+    "panopticon true [11]"
+    "panopticon true [12]"
 
     # "dofa true [0]"
     # "dofa true [1]" 
@@ -60,14 +60,15 @@ models=(
     # "dofa true [3,2,1]"
     # "panopticon true [3,2,1]"
 
-    "dofa false -1"
-    "panopticon false -1"
+    # "dofa false -1"
+    # "panopticon false -1"
 )
 
 tasks=(
     # "50 32"
     # "25 16"
-    "16.6 11"
+    # "16.6 11"
+    "33.3 21"
     # "12.5 8"
 )
 
@@ -121,7 +122,7 @@ do
         +model=base/$model \
         +data=$dataset\
         +optim=knn \
-        +output_dir=\'$ODIR/gsd_inv2/also_train/m-eurosat/$model/$prc/$ids\' \
+        +output_dir=\'$ODIR/gsd_spec_inv/also_train/m-eurosat/$model/knn/$prc/$ids\' \
         dl.batch_size=100 \
         dl.num_workers=8 \
         num_gpus=1 \

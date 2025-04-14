@@ -24,26 +24,27 @@ cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval5/bin/python $REP
 
 dataset=m-eurosat_gsdinv
 dataset_folder_name=m-eurosat
-gsd_mode=only_train
+gsd_mode=also_train
 full_size=64
 tasks=(
-    "100 64"
-    "50 32"
-    "25 16"
-    "12.5 8"
+    # "100 64"
+    # "50 32"
+    # "25 16"
+    # "12.5 8"
+    "33.3 21"
     # "16.6 11"
 )
 
 
 models=(
-    # "panopticon -1 200"
+    "panopticon -1 200"
     # "dofa -1 700"
     # "senpamae -1 400"
     # "dinov2 [3,2,1] 300"
     # "croma_12b [0,1,2,3,4,5,6,7,8,9,11,12] 200"
     # "softcon_13b -1 300"
     # "anysat_s2 [1,2,3,4,5,6,7,8,11,12] 100"
-    "galileo_s2 [1,2,3,4,5,6,7,8,11,12] 100"
+    # "galileo_s2 [1,2,3,4,5,6,7,8,11,12] 100"
 
 )
 
