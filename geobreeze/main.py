@@ -43,7 +43,7 @@ def process_config(cfg):
         assert cfg.num_gpus == 1, 'accelerated only supports single gpu for now'
         blks = 'linear_probe'
 
-    elif training_mode in ['finetune','segm_frozen_backbone']:
+    elif training_mode in ['finetune','segm_frozen_backbone','frozen_backbone']:
 
         with open_dict(cfg):
             cfg.optim.lr = cfg.optim.base_lr * cfg.dl.batch_size / 256 * cfg.num_gpus
@@ -122,6 +122,12 @@ def get_num_classes(datasets):
         ds = ds.dataset
     return ds.num_classes
 
+def get_num_channels(datasets):
+    ds = datasets['train']
+    if isinstance(ds, torch.utils.data.Subset):
+        ds = ds.dataset
+    return len(ds.band_ids)
+
 def do_knn(cfg, model: EvalModelWrapper, datasets: dict):
 
     results_list = eval_knn_with_model(
@@ -173,6 +179,7 @@ def do_linear_probe(cfg, model: EvalModelWrapper, datasets: dict):
         val_monitor_higher_is_better = cfg.data.task.metrics.ckpt_monitor_higher_is_better,
         batchwise_spectral_subsampling = cfg.optim.batchwise_spectral_subsampling,
         resume = cfg.resume,
+        save_checkpoint_frequency_epoch = cfg.optim.save_checkpoint_frequency_epoch,
     )
 
     # process loss file
@@ -232,7 +239,7 @@ def do_linear_probe(cfg, model: EvalModelWrapper, datasets: dict):
     else:
         raise NotImplementedError()
     
-    plot_curves(cfg.output_dir) # plot average curve into .png file
+    # plot_curves(cfg.output_dir) # plot average curve into .png file
     return pd.DataFrame(results_list)
 
 def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
@@ -242,13 +249,12 @@ def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
     experiment_name = cfg.experiment_name
     run_name = cfg.run_name
     num_classes = get_num_classes(datasets)
+    num_channels = get_num_channels(datasets)
 
     if task in ['classification','regression']:
-        # model.load_encoder(model.default_cls_blk_indices)
-        pl_task = LightningClsRegTask(cfg, model, num_classes)
+        pl_task = LightningClsRegTask(cfg, model, num_classes, num_channels)
     elif task == 'segmentation':
-        # model.load_encoder(model.segm_blk_indices)
-        pl_task = LightningSegmentationTask(cfg, model, num_classes)
+        pl_task = LightningSegmentationTask(cfg, model, num_classes, num_channels)
     else:
         raise NotImplementedError()
 
@@ -350,7 +356,7 @@ def main(cfg: DictConfig):
         logger.info('Running linear probe')
         results = do_linear_probe(cfg, model, datasets)
     
-    elif training_mode in ['finetune','segm_frozen_backbone']:
+    elif training_mode in ['finetune','segm_frozen_backbone','frozen_backbone']:
         logger.info('Running finetune')
         results = do_finetune(cfg, model, datasets)
 

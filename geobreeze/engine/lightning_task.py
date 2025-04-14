@@ -31,14 +31,13 @@ class LightningTask(LightningModule):
     
     encoder: EvalModelWrapper
     
-    def __init__(self, cfg, encoder: EvalModelWrapper, num_classes):
+    def __init__(self, cfg, encoder: EvalModelWrapper, num_classes, num_channels=-1):
         super().__init__()
         self.encoder = encoder
-        self.model_config = cfg.model
         self.num_classes = num_classes
-        self.training_mode = cfg.optim.mode
-        self.replace_pe = self.model_config.get('replace_pe', False)
         self.cfg = cfg
+        self.training_mode = self.cfg.optim.mode
+        self.replace_pe = self.cfg.model.get('replace_pe', False)
         self.save_hyperparameters()
 
         self.train_metrics = build_metric(
@@ -49,8 +48,9 @@ class LightningTask(LightningModule):
             cfg.data.task.metrics.val, num_classes=self.num_classes, key_prefix='test/') 
 
         if self.replace_pe:
-            self.new_pe = self.encoder.replace_pe(self.num_channels)
-            logger.info('Replaced PE!')
+            assert num_channels > 0, "num_channels must be specified if replace_pe is True"
+            self.new_pe = self.encoder.replace_pe(num_channels)
+            logger.info(f'Replaced PE with {num_channels} channels.')
 
     def freeze_and_return_params(self):
         """ freeze & unfreeze weights according to self.training_mode, also
@@ -108,7 +108,7 @@ class LightningTask(LightningModule):
             p.requires_grad = True
 
     def configure_optimizers(self):
-        optimizer = make_optimizer(self.cfg.optim.optim, 
+        optimizer = make_optimizer(self.cfg.optim.optim, lr=self.cfg.optim.lr,
                         params=self.freeze_and_return_params())
 
         world_size = self.cfg.num_gpus if self.cfg.num_gpus >= 1 else 1
@@ -144,33 +144,34 @@ class LightningTask(LightningModule):
 
 class LightningClsRegTask(LightningTask):
 
-    def __init__(self, cfg, encoder, num_classes):
-        super().__init__(cfg, encoder, num_classes)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-        self.criterion = make_criterion(cfg.task.criterion)
+        self.criterion = make_criterion(self.cfg.data.task.criterion)
         self.linear_classifier = BatchNormLinearHead(
-            in_features = self.model_config.embed_dim, 
+            in_features = self.cfg.model.embed_dim, 
             num_classes = self.num_classes)
 
     def freeze_and_return_params(self):
         """ freeze / unfreeze weights & return parameters to optimize 
             according to self.training_mode"""
         mode = self.training_mode
+        # self.unfreeze(self)
 
         # prepare encoder 
-        if mode == 'linear_probe':
+        if mode == 'frozen_backbone':
             self.freeze(self.encoder)
             self.encoder.eval()
 
-            params_to_optimize = self.linear_classifier.parameters()
+            params_to_optimize = list(self.linear_classifier.parameters())
 
         elif mode == 'partial_finetune':
             self.freeze(self.encoder)
             encoder_params_to_unfreeze = self._filter_named_params(
-                self.encoder.named_parameters(), self.model_config.params_to_train)
+                self.encoder.named_parameters(), self.cfg.model.params_to_train)
             self.unfreeze(encoder_params_to_unfreeze)
 
-            params_to_optimize = list([p for _, p in encoder_params_to_unfreeze])
+            params_to_optimize = [p for _, p in encoder_params_to_unfreeze]
 
         elif mode == 'lora':
             self.freeze(self.encoder)
@@ -179,7 +180,7 @@ class LightningClsRegTask(LightningTask):
             assert len(lora_params) > 0, "Did not find any LoRA parameters in the encoder"
             self.unfreeze(lora_params)
 
-            params_to_optimize = list([p for _, p in lora_params])
+            params_to_optimize = [p for _, p in lora_params]
 
         elif mode == 'finetune':
             self.unfreeze(self.encoder) 
@@ -235,10 +236,10 @@ class LightningClsRegTask(LightningTask):
 
 class LightningSegmentationTask(LightningTask):
 
-    def __init__(self, cfg, encoder, num_classes):
-        super().__init__(cfg, encoder, num_classes)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         assert MMSEGM_AVAIL, "MMSEG needs to be installed"
-        self.embed_dim = self.model_config.embed_dim
+        self.embed_dim = self.cfg.model.embed_dim
         self.criterion = nn.CrossEntropyLoss()
         self._build_default_segm_modules()
 
@@ -275,6 +276,7 @@ class LightningSegmentationTask(LightningTask):
         )
 
     def freeze_and_return_params(self):
+        self.freeze(self)
         if self.training_mode == 'finetune':
             self.unfreeze(self.encoder)
         elif self.training_mode == 'segm_frozen_backbone':

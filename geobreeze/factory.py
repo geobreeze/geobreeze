@@ -10,6 +10,7 @@ import geobreeze.datasets as gb_datasets
 
 import torch
 import torch.nn as nn
+import torch.optim as optim 
 
 import kornia.augmentation as K
 import kornia
@@ -90,7 +91,9 @@ def make_model(cfg) -> EvalModelWrapper:
     # return instantiate(cfg, mode='hydra')
 
 def make_optimizer(cfg, **kwargs):
-    return instantiate(cfg, **kwargs)
+    # return instantiate(cfg, **kwargs)
+    return optim.__dict__[cfg.pop('_target_')](**cfg, **kwargs)
+    # return instantiate(cfg, mode='hydra', **kwargs)
 
 def make_criterion(cfg):
     return instantiate(cfg)

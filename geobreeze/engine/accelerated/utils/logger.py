@@ -313,7 +313,7 @@ class BestValCheckpointer:
             self.best_metric = float("inf")
 
         ckpt_path = self._get_ckpt_path()
-        if os.path.exists(ckpt_path):
+        if ckpt_path is not None and os.path.exists(ckpt_path):
             ckpt = torch.load(ckpt_path, map_location='cpu')
             self._assert_correct_ckpt(ckpt)
             self.best_metric = ckpt['val']
@@ -343,7 +343,11 @@ class BestValCheckpointer:
                 val=val)
 
     def _get_ckpt_path(self):
-        return os.path.join(self.checkpointer.save_dir, f'{self.filename}.pth')
+        ckpt_path = os.path.join(self.checkpointer.save_dir, f'{self.filename}.pth')
+        if not os.path.exists(ckpt_path):
+            logger.info(f'Checkpoint {ckpt_path} does not exist')
+            return None
+        return ckpt_path
 
     def _assert_correct_ckpt(self, ckpt):
         assert ckpt['higher_is_better'] == self.higher_is_better, 'Loaded model has different higher_is_better setting'
@@ -351,7 +355,10 @@ class BestValCheckpointer:
 
     def load_best(self):
         """ load best ckpt into the model of self.checkpointer and return the dict """
-        ckpt = self.checkpointer.load(self._get_ckpt_path()) # also loads model weights in self.checkpointer.model
+        ckpt_path = self._get_ckpt_path()
+        if ckpt_path is None:
+            return None
+        ckpt = self.checkpointer.load(ckpt_path) # also loads model weights in self.checkpointer.model
         self._assert_correct_ckpt(ckpt)
 
         best_classifier_str = ckpt['best_classifier_str']
