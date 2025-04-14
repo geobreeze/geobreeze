@@ -12,7 +12,6 @@ train:
   root: ${oc.env:DATASETS_DIR}/spectral_earth
   split: train
   band_ids: [0,4,10,14,23,26,28,44,47,49,59,73,74,122,135,160]
-  transform: ${_vars.augm.cls.train}
 
 val:
   _target_: CorineDataset

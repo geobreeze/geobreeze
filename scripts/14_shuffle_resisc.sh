@@ -3,14 +3,14 @@
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
 
-#SBATCH --job-name=gsd_inv_resisc_knn
+#SBATCH --job-name=adapt_dinov2
 #SBATCH --partition=accelerated
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=20        # default: 38
-#SBATCH --time=00:15:00
-#SBATCH --array=0-19
+#SBATCH --time=02:00:00
+#SBATCH --array=0-11
 
 
 # ---------- HOREKA ------------
@@ -22,37 +22,23 @@ cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO
 
 # m-eurosat
 
-dataset=resisc45_gsdinv
-dataset_folder_name=resisc45
-gsd_mode=also_train
-full_size=224
-tasks=(
-    "100 224"
-    "50 112"
-    "25 56"
-    "12.5 28"
-)
+all_tasks=(
+    "resisc45 linear_probe dinov2 [0,1,2] 200"
+    "resisc45 linear_probe dinov2 [0,2,1] 200"
+    "resisc45 linear_probe dinov2 [1,0,2] 200"
+    "resisc45 linear_probe dinov2 [1,2,0] 200"
+    "resisc45 linear_probe dinov2 [2,0,1] 200"
+    "resisc45 linear_probe dinov2 [2,1,0] 200"
 
-models=(
-    "panopticon -1 200"
-    "dofa -1 700"
-    "senpamae -1 400"
-    "dinov2 -1 300"
-    "anysat_spot -1 100"
+    "resisc45 knn dinov2 [0,1,2] 200"
+    "resisc45 knn dinov2 [0,2,1] 200"
+    "resisc45 knn dinov2 [1,0,2] 200"
+    "resisc45 knn dinov2 [1,2,0] 200"
+    "resisc45 knn dinov2 [2,0,1] 200"
+    "resisc45 knn dinov2 [2,1,0] 200"
 )
 
 
-
-
-# Generate all tasks as the cross product of models and tasks
-all_tasks=()
-for model in "${models[@]}"
-do
-    for task in "${tasks[@]}"
-    do
-        all_tasks+=("$model $task")
-    done
-done
 
 # process which tasks to execute
 if [ $# -eq 0 ]; then
@@ -72,11 +58,11 @@ do
     task=${all_tasks[$task_id]}
     echo "Running Task: $task"
     set $task
-    model=$1
-    ids=$2
-    bsz=$3
-    prc=$4
-    size=$5
+    dataset=$1
+    train_mode=$2
+    model=$3
+    ids=$4
+    bsz=$5
 
     # potentially subset
     add_kwargs=""
@@ -86,23 +72,15 @@ do
             +data.val.band_ids=$ids \
             +data.test.band_ids=$ids "
     fi
-    nchns=$(echo "$ids" | awk -F',' '{print NF}')
 
-    # set gsdmode
-    if [ "$gsd_mode" == "only_val" ]; then
-        train_size=$full_size
-        val_size=$size
-        test_size=$size
-    elif [ "$gsd_mode" == "also_train" ]; then
-        train_size=$size
-        val_size=$size
-        test_size=$size
-    elif [ "$gsd_mode" == "only_train" ]; then
-        train_size=$size
-        val_size=$full_size
-        test_size=$full_size
+    if [ "$train_mode" == "knn" ]; then
+        add_kwargs="$add_kwargs \
+            +data.train.transform=\${_vars.augm.cls.val}"
+    elif [ "$train_mode" == "linear_probe" ]; then
+        add_kwargs="$add_kwargs \
+            +data.train.transform=\${_vars.augm.cls.train}"
     else
-        echo "Error: Invalid gsd_mode value. Must be 'only_val' or 'also_train'."
+        echo "Unknown training mode: $train_mode"
         exit 1
     fi
 
@@ -110,15 +88,12 @@ do
     $cmd \
         +model=base/$model \
         +data=$dataset\
-        +optim=knn \
-        +output_dir=\'$ODIR/gsd_inv/$gsd_mode/$dataset_folder_name/knn/$model/$prc/\' \
-        dl.batch_size=100 \
+        +optim=$train_mode \
+        +output_dir=\'$ODIR/domain_adapt/shuffle/$dataset/$train_mode/$model/$ids\' \
+        dl.batch_size=$bsz \
         dl.num_workers=8 \
         num_gpus=1 \
         seed=21 \
-        data.train.transform.0.size=$train_size \
-        data.val.transform.0.size=$val_size \
-        data.test.transform.0.size=$test_size \
         $add_kwargs \
         # overwrite=true \
 

@@ -1,7 +1,7 @@
 defaults:
 - optim: sgd
 
-mode: finetune
+mode: frozen_backbone
 
 base_lr: -1
 epochs: 50

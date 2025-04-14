@@ -1,0 +1,22 @@
+defaults:
+- task/regression
+
+
+train:
+  _target_: TropicalCyclone
+  split: train
+  root: ${oc.env:DATASETS_DIR}/TropicalCyclone
+  transform: ${_vars.augm.cls.train}
+  subset: 0.1
+
+val:
+  _target_: TropicalCyclone
+  split: val
+  root: ${oc.env:DATASETS_DIR}/TropicalCyclone
+  transform: ${_vars.augm.cls.val}
+
+test:
+  _target_: TropicalCyclone
+  split: test
+  root: ${oc.env:DATASETS_DIR}/TropicalCyclone
+  transform: ${_vars.augm.cls.val}

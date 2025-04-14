@@ -1,0 +1,22 @@
+defaults:
+- task/regression
+
+
+train:
+  _target_: DigitalTyphoon
+  split: train
+  root: ${oc.env:DATASETS_DIR}/DigitalTyphoon
+  transform: ${_vars.augm.cls.train}
+  subset: 0.1
+
+val:
+  _target_: DigitalTyphoon
+  split: val
+  root: ${oc.env:DATASETS_DIR}/DigitalTyphoon
+  transform: ${_vars.augm.cls.val}
+
+test:
+  _target_: DigitalTyphoon
+  split: test
+  root: ${oc.env:DATASETS_DIR}/DigitalTyphoon
+  transform: ${_vars.augm.cls.val}

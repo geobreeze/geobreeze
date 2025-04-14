@@ -1,0 +1,31 @@
+defaults:
+- task/regression
+
+
+# MD (some bands unmatched): [-1,-1,1,8,21,27,29,57,64,67,89,124,127,-1,-1,-1,]
+# MD: [1,8,21,27,29,57,64,67,89,124,127]
+# MD_rgb: [64,29,8]
+# SD (some bands unmatched): [-1,9,22,32,47,64,77,126]
+# SD: [9,22,32,47,64,77,126]
+# SD_rgb: [63,32,9]
+
+
+train:
+  _target_: Hyperview
+  split: train
+  root: ${oc.env:DATASETS_DIR}/hyperview
+  band_ids: [1,8,21,27,29,57,64,67,89,124,127]
+
+val:
+  _target_: Hyperview
+  split: val
+  root: ${oc.env:DATASETS_DIR}/hyperview
+  transform: ${_vars.augm.cls.val}
+  band_ids: [1,8,21,27,29,57,64,67,89,124,127]
+
+test:
+  _target_: Hyperview
+  split: test
+  root: ${oc.env:DATASETS_DIR}/hyperview
+  transform: ${_vars.augm.cls.val}
+  band_ids: [1,8,21,27,29,57,64,67,89,124,127]

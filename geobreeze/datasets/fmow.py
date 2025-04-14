@@ -227,25 +227,25 @@ class FmowBenchmarkDataset(NonGeoDataset):
 
 class FmowDataset(BaseDataset):
     def __init__(self, 
-            root_dir: str,
+            root: str,
             split: str,
-            keep_sensors: list = None,
             transform_list = None,
             **kwargs
         ):
-        super().__init__('FmowDataset', **kwargs)
-        num_channels = len(self.chn_ids) if self.band_ids is None else len(self.band_ids)
+        super().__init__('fmow_wv23', **kwargs)
 
         transform = K.AugmentationSequential(*transform_list, data_keys=['image'])
 
         self.dataset = FmowBenchmarkDataset(
-            root=root_dir, 
+            root=root, 
             split=split, 
             transforms=transform, 
-            keep_sensors=keep_sensors,
-            num_channels=num_channels, 
+            keep_sensors= ['WORLDVIEW02', 'WORLDVIEW03_VNIR'], # to ensure that only fmow_wv23 used
+            num_channels=8, 
             normalize=True
         )
+
+        self.num_classes = self.dataset.num_classes
 
     def _getitem(self, idx):
         return self.dataset[idx]

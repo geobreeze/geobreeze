@@ -67,7 +67,7 @@ class Croma(EvalModelWrapper):
 
     def get_segm_blks(self, x_dict: Tensor) -> list[torch.Tensor]:
         """ need to overwrite because croma has no class token. """
-        return self.encoder(**{f"{self.modality}_images": x_dict})['out_feats']
+        return self.encoder(**{f"{self.modality}_images": x_dict['imgs']})['out_feats']
     
     def replace_pe(self, num_channels):
         mod = self.modality

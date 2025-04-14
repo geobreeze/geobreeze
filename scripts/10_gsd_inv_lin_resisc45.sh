@@ -9,8 +9,8 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=38        # default: 38
-#SBATCH --time=02:15:00
-#SBATCH --array=0-15
+#SBATCH --time=01:00:00
+#SBATCH --array=0-3
 
 
 # ---------- HOREKA ------------
@@ -24,6 +24,8 @@ cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO
 
 dataset=resisc45_resize
 dataset_folder_name=resisc45
+gsd_mode=only_train
+full_size=224
 tasks=(
     "100 224"
     "50 112"
@@ -34,10 +36,11 @@ tasks=(
 
 
 models=(
-    "panopticon -1 200"
-    "dofa -1 700"
-    "senpamae -1 400"
-    "dinov2 -1 300"
+    # "panopticon -1 200"
+    # "dofa -1 700"
+    # "senpamae -1 400"
+    # "dinov2 -1 300"
+    "anysat_spot -1 100"
 )
 
 
@@ -88,19 +91,39 @@ do
     fi
     # nchns=$(echo "$ids" | awk -F',' '{print NF}')
 
+    # set gsdmode
+    if [ "$gsd_mode" == "only_val" ]; then
+        train_size=$full_size
+        val_size=$size
+        test_size=$size
+    elif [ "$gsd_mode" == "also_train" ]; then
+        train_size=$size
+        val_size=$size
+        test_size=$size
+    elif [ "$gsd_mode" == "only_train" ]; then
+        train_size=$size
+        val_size=$full_size
+        test_size=$full_size
+    else
+        echo "Error: Invalid gsd_mode value. Must be 'only_val' or 'also_train'."
+        exit 1
+    fi
+
     # main command
     $cmd \
         +model=base/$model \
         +data=$dataset\
         +optim=linear_probe \
-        +output_dir=\'$ODIR/gsd_inv/also_train/$dataset_folder_name/linear_probe/$model/$prc/\' \
+        +output_dir=\'$ODIR/gsd_inv/$gsd_mode/$dataset_folder_name/linear_probe/$model/$prc/\' \
         dl.batch_size=$bsz \
         dl.num_workers=10 \
         num_gpus=1 \
         seed=21 \
-        data.train.transform.0.size=$size \
-        data.val.transform.0.size=$size \
-        data.test.transform.0.size=$size \
+        data.train.transform.0.size=$train_size \
+        data.val.transform.0.size=$val_size \
+        data.test.transform.0.size=$test_size \
+        optim.check_val_every_n_epoch=100 \
+        logger=none \
         $add_kwargs \
         # data.train.transform.0.size=$size \
         # overwrite=true \

@@ -1,0 +1,22 @@
+defaults:
+- task/cls
+
+
+train:
+  _target_: FmowDataset
+  root: ${oc.env:DATASETS_DIR}
+  split: train
+  transform: ${_vars.augm.cls.train}
+  subset: 0.1
+
+val:
+  _target_: FmowDataset
+  root: ${oc.env:DATASETS_DIR}
+  split: val
+  transform: ${_vars.augm.cls.val}
+
+test:
+  _target_: FmowDataset
+  root: ${oc.env:DATASETS_DIR}
+  split: test
+  transform: ${_vars.augm.cls.val}

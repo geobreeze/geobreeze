@@ -53,7 +53,7 @@ class TropicalCyclone(BaseDataset):
 
         sample['image'] = self.trf(sample['image'])
 
-        return sample['image'], sample['label']
+        return sample['image'], sample['label'].unsqueeze(0)
     
     def _len(self):
         return len(self.dataset)

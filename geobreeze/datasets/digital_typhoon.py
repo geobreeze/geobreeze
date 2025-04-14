@@ -22,7 +22,7 @@ class DigitalTyphoon(BaseDataset):
     def __init__(
             self, 
             root: str,
-            sequence_length: int,
+            # sequence_length: int, # should be 1
             split: str,
             transform_list: list = [],
             normalize: bool = True,
@@ -30,9 +30,7 @@ class DigitalTyphoon(BaseDataset):
         )-> None:
         super().__init__('digital_typhoon',**kwargs)
 
-        dm = DigitalTyphoonDataModule(
-            root=root, sequence_length=sequence_length
-        )
+        dm = DigitalTyphoonDataModule(root=root, sequence_length=1)
         # use the splits implemented in torchgeo
         dm.setup('fit')
         dm.setup('test')

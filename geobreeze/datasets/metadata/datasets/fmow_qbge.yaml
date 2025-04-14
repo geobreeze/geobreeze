@@ -1,0 +1,9 @@
+num_classes: -1 # placeholder, set in python class
+
+bands:
+- id: qb2_ge1/B03
+- id: qb2_ge1/B02
+- id: qb2_ge1/B01
+- id: qb2_ge1/B04
+
+task_id: classification

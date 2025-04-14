@@ -5,7 +5,7 @@ defaults:
 train:
   _target_: Resisc45
   split: train
-  transform: ${_vars.augm.cls.train}
+  # transform: ${_vars.augm.cls.val}
 
 val:
   _target_: Resisc45
