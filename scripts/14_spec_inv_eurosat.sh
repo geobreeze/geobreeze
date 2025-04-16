@@ -9,8 +9,8 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=38        # default: 38
-#SBATCH --time=00:05:00
-#SBATCH --array=0-99
+#SBATCH --time=02:30:00
+#SBATCH --array=0-53
 
 # fastdevrun='--fastdevrun'
 # eval="eval.only_eval=True"
@@ -231,7 +231,7 @@ all_tasks=(
 model=panopticon
 # dataset="m-eurosat_bandgsd_10to60_knn"
 dataset="m-eurosat"
-train_mode=knn
+train_mode=linear_probe
 
 # process which tasks to execute
 if [ $# -eq 0 ]; then
@@ -287,13 +287,14 @@ do
         +model=base/$model \
         +data=$dataset\
         +optim=$train_mode \
-        +output_dir=\'$ODIR/investigate_chn_influence/$dataset/$train_mode/$model/$nchns/$ids\' \
-        dl.batch_size=100 \
+        +output_dir=\'$ODIR/gsd_spec_inv/also_train/$dataset/$model/$train_mode/100/$nchns/$ids\' \
+        dl.batch_size=200 \
         dl.num_workers=8 \
         num_gpus=1 \
         seed=21 \
         $add_kwargs \
 
         # overwrite=true \
+        # +output_dir=\'$ODIR/investigate_chn_influence/$dataset/$train_mode/$model/$nchns/$ids\' \
 
 done

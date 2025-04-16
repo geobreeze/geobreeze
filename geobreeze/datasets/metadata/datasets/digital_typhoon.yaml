@@ -8,3 +8,4 @@ bands:
     mu: 10400
     std: 250
   gsd: 5000
+  srf_filename: blue.npy

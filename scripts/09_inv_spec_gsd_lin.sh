@@ -10,7 +10,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=20        # default: 38
 #SBATCH --time=00:30:00
-#SBATCH --array=0-77
+#SBATCH --array=0-12
 
 
 # ---------- HOREKA ------------
@@ -39,19 +39,19 @@ models=(
     "panopticon [11] 200"
     "panopticon [12] 200"
 
-    "dofa [0] 700"
-    "dofa [1] 700" 
-    "dofa [2] 700"
-    "dofa [3] 700"
-    "dofa [4] 700"
-    "dofa [5] 700"
-    "dofa [6] 700"
-    "dofa [7] 700"
-    "dofa [8] 700"
-    "dofa [9] 700"
-    "dofa [10] 700"
-    "dofa [11] 700"
-    "dofa [12] 700"
+    # "dofa [0] 700"
+    # "dofa [1] 700" 
+    # "dofa [2] 700"
+    # "dofa [3] 700"
+    # "dofa [4] 700"
+    # "dofa [5] 700"
+    # "dofa [6] 700"
+    # "dofa [7] 700"
+    # "dofa [8] 700"
+    # "dofa [9] 700"
+    # "dofa [10] 700"
+    # "dofa [11] 700"
+    # "dofa [12] 700"
 
     # "dinov2  [3,2,1]"
     # "dofa  [3,2,1]"
@@ -63,9 +63,11 @@ models=(
 )
 
 tasks=(
-    "50 32"
-    "25 16"
-    "16.6 11"
+    # "100 64"
+    # "50 32"
+    # "25 16"
+    # "16.6 11"
+    "33.3 21"
     # "12.5 8"
 )
 

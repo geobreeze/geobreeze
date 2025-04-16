@@ -3,13 +3,13 @@
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
 
-#SBATCH --job-name=cls_s1_anysat
+#SBATCH --job-name=senpamae_dt_tc
 #SBATCH --partition=accelerated
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=38        # default: 38
-#SBATCH --time=10:00:00
+#SBATCH --time=3:00:00
 #SBATCH --array=0-1
 
 # fastdevrun='--fastdevrun'
@@ -31,14 +31,14 @@ all_tasks=(
     # "m-so2sat-s1 panopticon -1 400"
     # "m-so2sat-s1 dofa -1 500"
     # "m-so2sat-s1 dinov2 [0,4,4] 900"
-    "m-so2sat-s1 anysat_s1-asc -1 100 -1 m-so2sat-s1"
+    # "m-so2sat-s1 anysat_s1-asc -1 100 -1 m-so2sat-s1"
 
     # "eurosat-sar softcon_2b -1 900"
     # "eurosat-sar croma_s1 -1 900"
     # "eurosat-sar panopticon -1 400"
     # "eurosat-sar dofa -1 500"
     # "eurosat-sar dinov2 [0,1,1] 900"
-    "eurosat-sar anysat_s1-asc -1 100 -1 eurosat-sar"
+    # "eurosat-sar anysat_s1-asc -1 100 -1 eurosat-sar"
 
 
     # "corine-sd dofa -1 300 -1 corine-sd"
@@ -61,6 +61,10 @@ all_tasks=(
 
     # "corine dinov2 [47,28,14] 400 -1 corine-MD"
     # "corine dinov2 [47,30,15] 400 -1 corine-SD"
+
+    "digital_typhoon-10 senpamae -1 300 -1 digital_typhoon-10"
+    "tropical_cyclone-10 senpamae -1 300 -1 tropical_cyclone-10"
+
 )
 
 mode=linear_probe

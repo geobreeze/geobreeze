@@ -10,7 +10,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=38        # default: 38
 #SBATCH --time=02:30:00
-#SBATCH --array=0-26
+#SBATCH --array=0-53
 
 # fastdevrun='--fastdevrun'
 # eval="eval.only_eval=True"
@@ -23,7 +23,7 @@ cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO
 # -----------------------------
 
 
-all_tasks=(
+task_ids=(
   "[0]"
   "[7]"
   "[15]"
@@ -52,12 +52,33 @@ all_tasks=(
   "[193]"
   "[200]"
 )
+gsd_mode=also_train
+dataset=corine-10
+full_size=128
+task_gsds=(
+    # "100 128"
+    "50 64"
+    "25 32"
+    # "12.5 16"
+)
 
-dataset=corine
+
 train_mode=linear_probe
 model=panopticon
 bsz=200
 epochs=50
+
+
+# merge tasks
+all_tasks=()
+for ids in "${task_ids[@]}"
+do
+    for gsds in "${task_gsds[@]}"
+    do
+        all_tasks+=("$ids $gsds")
+    done
+done
+
 
 # process which tasks to execute
 if [ $# -eq 0 ]; then
@@ -71,7 +92,6 @@ else
 fi
 
 
-
 # execute
 for task_id in "${task_ids[@]}"
 do
@@ -79,7 +99,8 @@ do
     echo $task $train_mode
     set -- $task
     ids=$1
-
+    prc=$2
+    size=$3
 
     # potentially subset
     add_kwargs=""
@@ -93,10 +114,15 @@ do
     # adjust train mode args
     if [ "$train_mode" == "knn" ]; then
         add_kwargs="$add_kwargs \
-            data.train.transform=\${_vars.augm.cls.val}"
+            data.train.transform=\${_vars.augm.cls.val_resize} \
+            data.val.transform=\${_vars.augm.cls.val_resize} \
+            data.test.transform=\${_vars.augm.cls.val_resize} \
+            "
     elif [ "$train_mode" == "linear_probe" ]; then
         add_kwargs="$add_kwargs \
-            data.train.transform=\${_vars.augm.cls.train}\
+            data.train.transform=\${_vars.augm.cls.train_resize} \
+            data.val.transform=\${_vars.augm.cls.val_resize} \
+            data.test.transform=\${_vars.augm.cls.val_resize} \
             optim.check_val_every_n_epoch=100 \
             optim.save_checkpoint_frequency_epoch=100 \
             logger=none \
@@ -106,19 +132,42 @@ do
         exit 1
     fi
 
+    # set gsdmode
+    if [ "$gsd_mode" == "only_val" ]; then
+        train_size=$full_size
+        val_size=$size
+        test_size=$size
+    elif [ "$gsd_mode" == "also_train" ]; then
+        train_size=$size
+        val_size=$size
+        test_size=$size
+    elif [ "$gsd_mode" == "only_train" ]; then
+        train_size=$size
+        val_size=$full_size
+        test_size=$full_size
+    else
+        echo "Error: Invalid gsd_mode value. Must be 'only_val' or 'also_train'."
+        exit 1
+    fi
+
     nchns=$(echo "$ids" | awk -F',' '{print NF}')
 
     $cmd \
         +model=base/$model \
         +data=$dataset\
         +optim=$train_mode \
-        +output_dir=\'$ODIR/investigate_chn_influence/$dataset/$train_mode/$model/$nchns/$ids\' \
+        +output_dir=\'$ODIR/gsd_spec_inv/$gsd_mode/$dataset/$model/$train_mode/$prc/$nchns/$ids\' \
         dl.batch_size=$bsz \
         dl.num_workers=12 \
         num_gpus=1 \
         seed=21 \
         optim.epochs=$epochs \
         $add_kwargs \
+        _vars.augm.cls.train_resize.0.size=$train_size \
+        _vars.augm.cls.val_resize.0.size=$val_size \
+        # data.train.transform.0.size=$train_size \
+        # data.val.transform.0.size=$val_size \
+        # data.test.transform.0.size=$test_size \
         
         # overwrite=true \
 

@@ -3,7 +3,7 @@ seed: 21
 num_gpus: 1
 add_defining_args: true
 resume: true
-logger: mlflow
+logger: none
 overwrite: false
 
 model:
@@ -50,6 +50,29 @@ _vars:
       val:
       - _target_: Resize
         size: ["${model.image_resolution}","${model.image_resolution}"]
+        keepdim: true
+
+      train_resize:
+      - _target_: Resize
+        size: -1
+        keepdim: true
+      - _target_: RandomHorizontalFlip
+        p: 0.5
+        keepdim: true
+      - _target_: RandomVerticalFlip
+        p: 0.5
+        keepdim: true
+      - _target_: RandomResizedCrop
+        size: ["${model.image_resolution}","${model.image_resolution}"]
+        scale: [0.8, 1.0]
+        keepdim: true
+
+      val_resize:
+      - _target_: Resize
+        size: -1
+        keepdim: true
+      - _target_: Resize
+        size: "${model.image_resolution}"
         keepdim: true
 
     segm:

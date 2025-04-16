@@ -10,14 +10,14 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=20        # default: 38
 #SBATCH --time=04:00:00
-#SBATCH --array=0-47
+#SBATCH --array=72-111
 
 
 # ---------- HOREKA ------------
 # eval_cmd='srun -K1 --export=ALL /home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval2/bin/python /home/hk-project-pai00028/tum_mhj8661/code/geobreeze/geobreeze/main.py'
 REPO_PATH=/home/hk-project-pai00028/tum_mhj8661/code/geobreeze
 export $(cat $REPO_PATH/.env)
-cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval5/bin/python $REPO_PATH/geobreeze/main.py"
+cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO_PATH/geobreeze/main.py"
 # -----------------------------
 
 # m-eurosat
@@ -38,9 +38,33 @@ tasks=(
     "hyperview-md frozen_backbone croma_12b -1 200"
     "hyperview-md frozen_backbone softcon_13b -1 200"
     "hyperview-md frozen_backbone anysat_naip -1 100"
+
+    "digital_typhoon-10 frozen_backbone croma_12b -1 200"
+    "digital_typhoon-10 frozen_backbone softcon_13b -1 200"
+    "digital_typhoon-10 frozen_backbone anysat_naip -1 100"
+
+    "tropical_cyclone-10 frozen_backbone croma_12b -1 200"
+    "tropical_cyclone-10 frozen_backbone softcon_13b -1 200"
+    "tropical_cyclone-10 frozen_backbone anysat_naip -1 100"
+
+    # 72-
+    "corine-sd frozen_backbone dinov2 -1 200"
+    "corine-md frozen_backbone dinov2 -1 200"
+    "hyperview-sd frozen_backbone dinov2 -1 200"
+    "hyperview-md frozen_backbone dinov2 -1 200"
+    "digital_typhoon-10 frozen_backbone dinov2 -1 200"
+    "tropical_cyclone-10 frozen_backbone dinov2 -1 200"
+
+    # 96-
+    "fmow-10 frozen_backbone croma_12b -1 200"
+    "fmow-10 frozen_backbone softcon_13b -1 200"
+    "fmow-10 frozen_backbone anysat_naip -1 100"
+    "fmow-10 frozen_backbone dinov2 -1 200"
+
 )
 
-lrs="1e-2 1e-3 5e-4 1e-4"
+lrs="1e-2 1e-3 5e-4 1e-4"  # original
+# lrs="1e-1 5e-1 5e-2 5e-3 1e-5 1e-6"
 
 
 
@@ -95,7 +119,7 @@ do
     #         +data.train.transform=\${_vars.augm.cls.train}"
     if [ "$optim" == "frozen_backbone" ]; then
         add_kwargs="$add_kwargs \
-            +data.train.transform=\${_vars.augm.cls.train}"
+            data.train.transform=\${_vars.augm.cls.train}"
     else
         echo "Unknown training mode: $optim"
         exit 1
@@ -113,7 +137,8 @@ do
         num_gpus=1 \
         seed=21 \
         +model.replace_pe=True \
-        optim.check_val_every_n_epoch=10 \
+        optim.check_val_every_n_epoch=100 \
+        logger=none \
         $add_kwargs \
         # overwrite=true \
 

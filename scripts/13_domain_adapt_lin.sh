@@ -111,7 +111,7 @@ do
         dl.num_workers=10 \
         num_gpus=1 \
         seed=21 \
-        optim.epochs=30 \
+        optim.epochs=50 \
         optim.check_val_every_n_epoch=100 \
         $add_kwargs \
         # optim.epochs=1 \
