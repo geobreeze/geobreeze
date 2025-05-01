@@ -1,0 +1,39 @@
+defaults:
+- task/cls
+
+train:
+  _target_: GeoBenchDataset
+  ds_name: m-forestnet
+  split: train
+  transform: 
+  - _target_: Resize
+    size: -1
+    keepdim: true
+  - _target_: Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
+val:
+  _target_: GeoBenchDataset
+  ds_name: m-forestnet
+  split: val
+  transform: 
+  - _target_: Resize
+    size: -1
+    keepdim: true
+  - _target_: Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
+test:
+  _target_: GeoBenchDataset
+  ds_name: m-forestnet
+  split: test
+  transform: 
+  - _target_: Resize
+    size: -1
+    keepdim: true
+  - _target_: Resize
+    size: "${model.image_resolution}"
+    keepdim: true
+
