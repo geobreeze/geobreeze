@@ -1,0 +1,14 @@
+task: segmentation
+num_classes: 7
+
+image_resolution: 256
+
+bands:
+- id: sentinel2/B04
+  name: Red
+- id: sentinel2/B03
+  name: Green
+- id: sentinel2/B02
+  name: Blue
+- id: sentinel2/B08
+  name: NearInfrared

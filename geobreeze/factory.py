@@ -49,7 +49,6 @@ def make_dataset(cfg, seed=21, **kwargs):
         **kwargs,
         transform_list = transform_list, 
         withmetainfo_trf_list = withmetainfo_trf_list, )
-    # ds = instantiate(cfg, mode='hydra', transform_list=transform_list, **kwargs)
     ds = make_subset(ds, subset, seed=seed)
 
     return ds
@@ -61,9 +60,6 @@ def make_transform_list(cfg_list, **kwargs):
     for cfg in cfg_list: 
         cfg = deepcopy(cfg)
         cfg = OmegaConf.to_container(cfg, resolve=True)
-        # for k,v in cfg.items():
-        #     print(f'cfg: {k}: {type(v)}, {v}')
-        # trf = instantiate(cfg, mode='hydra')
         if cfg['_target_'].startswith('custom.'):
             trf = gb_augmentations.__dict__[cfg.pop('_target_')[7:]](**cfg, **kwargs)
         else:
@@ -97,14 +93,10 @@ def make_subset(ds, subset, seed):
     return ds
 
 def make_model(cfg) -> EvalModelWrapper:
-    # cfg = deepcopy(cfg)
     return gb_models.__dict__[cfg.pop('_target_')](**cfg)
-    # return instantiate(cfg, mode='hydra')
 
 def make_optimizer(cfg, **kwargs):
-    # return instantiate(cfg, **kwargs)
     return optim.__dict__[cfg.pop('_target_')](**cfg, **kwargs)
-    # return instantiate(cfg, mode='hydra', **kwargs)
 
 def make_criterion(cfg):
     return instantiate(cfg)

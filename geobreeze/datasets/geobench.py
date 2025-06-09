@@ -19,11 +19,11 @@ class GeoBenchDataset(BaseDataset):
         'm-bigearthnet': 'classification_v1.0',
 
         'm-pv4ger-seg': 'segmentation_v1.0',
-        'm-chesapeake-landcover': 'segmentation_v1.0',
+        'm-chesapeake': 'segmentation_v1.0',
         'm-cashew-plant': 'segmentation_v1.0',
-        'm-sa-crop-type': 'segmentation_v1.0',
+        'm-SA-crop-type': 'segmentation_v1.0',
         'm-nz-cattle': 'segmentation_v1.0',
-        'm-neontree': 'segmentation_v1.0',
+        'm-NeonTree': 'segmentation_v1.0',
     }
 
     def __init__(self, 

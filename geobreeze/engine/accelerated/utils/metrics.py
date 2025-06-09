@@ -14,6 +14,7 @@ from torchmetrics import MeanAbsoluteError, MetricCollection
 from torchmetrics import Accuracy
 from torchmetrics.classification import MulticlassAccuracy, MultilabelAveragePrecision, MultilabelF1Score, JaccardIndex, F1Score
 from torchmetrics.regression import MeanSquaredError
+from torchmetrics.segmentation import MeanIoU
 
 from . import distributed
 import torch.nn as nn
@@ -75,8 +76,14 @@ def build_metric(metric_cfg: List, num_classes, key_prefix='') -> MetricCollecti
         elif id == 'JaccardIndex':
             defaults = dict(average='micro', task='multiclass')
             defaults.update(cfg)
-            key = 'mIoU'
+            key = 'jaccard'
             val = JaccardIndex(num_classes=num_classes, **defaults)
+
+        elif id == 'MeanIoU':
+            defaults = dict(input_format='index')
+            defaults.update(cfg)
+            key = 'mIoU'
+            val = MeanIoU(num_classes=num_classes, )
 
         elif id == 'F1Score':
             defaults = dict(average='micro', task='multiclass')

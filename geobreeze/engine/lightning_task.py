@@ -5,10 +5,7 @@ import torch
 from geobreeze.util.misc import resize
 import torch.nn as nn
 from .model import EvalModelWrapper
-from einops import rearrange 
 from .base import BatchNormLinearHead
-from torch import Tensor
-import hydra
 import logging
 
 from geobreeze.engine.accelerated.utils.metrics import build_metric
@@ -33,13 +30,14 @@ class LightningTask(LightningModule):
     
     def __init__(self, cfg, encoder: EvalModelWrapper, num_classes, num_channels=-1):
         super().__init__()
+        self.cfg = cfg
         self.encoder = encoder
         self.num_classes = num_classes
-        self.cfg = cfg
         self.training_mode = self.cfg.optim.mode
         self.replace_pe = self.cfg.model.get('replace_pe', False)
-        self.save_hyperparameters()
-
+        self.criterion = make_criterion(self.cfg.data.task.criterion)
+        self.save_hyperparameters(ignore=['encoder'])
+        
         self.train_metrics = build_metric(
             cfg.data.task.metrics.train, num_classes=self.num_classes, key_prefix='train/') 
         self.val_metrics = build_metric(
@@ -63,9 +61,17 @@ class LightningTask(LightningModule):
     def loss(self, outputs, labels):
         raise NotImplementedError('Subclass must implement this method')
 
-    def log_metrics(self, outputs, targets, loss, prefix="train"):
+    def log_metrics(self, outputs, targets, loss, prefix="train", apply_argmax=False):
         metrics = self.__getattr__(f"{prefix}_metrics")
-        out_dict = metrics(outputs, targets)
+        # print(f'Logging metrics: outputs={tuple(outputs.shape)}, targets={tuple(targets.shape)}')
+
+        if apply_argmax:
+            out_dict = metrics(
+                torch.argmax(outputs, axis=1),
+                targets.long()
+            )
+        else:  
+            out_dict = metrics(outputs, targets)
 
         on_step = True if prefix == 'train' else False
         on_epoch = True
@@ -113,9 +119,9 @@ class LightningTask(LightningModule):
 
         world_size = self.cfg.num_gpus if self.cfg.num_gpus >= 1 else 1
         num_warmup_steps = (
-            self.train_dl_len * self.cfg.optim.warmup_epochs // world_size)
+            self.cfg.optim.warmup_epochs * self.train_dl_len // world_size)
         total_steps = (
-            self.train_dl_len * self.cfg.optim.epochs // world_size)
+            self.cfg.optim.epochs * self.train_dl_len // world_size)
 
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
             optimizer,
@@ -147,7 +153,6 @@ class LightningClsRegTask(LightningTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.criterion = make_criterion(self.cfg.data.task.criterion)
         self.linear_classifier = BatchNormLinearHead(
             in_features = self.cfg.model.embed_dim, 
             num_classes = self.num_classes)
@@ -156,14 +161,11 @@ class LightningClsRegTask(LightningTask):
         """ freeze / unfreeze weights & return parameters to optimize 
             according to self.training_mode"""
         mode = self.training_mode
-        # self.unfreeze(self)
 
         # prepare encoder 
         if mode == 'frozen_backbone':
             self.freeze(self.encoder)
             self.encoder.eval()
-
-            params_to_optimize = list(self.linear_classifier.parameters())
 
         elif mode == 'partial_finetune':
             self.freeze(self.encoder)
@@ -172,15 +174,6 @@ class LightningClsRegTask(LightningTask):
             self.unfreeze(encoder_params_to_unfreeze)
 
             params_to_optimize = [p for _, p in encoder_params_to_unfreeze]
-
-        elif mode == 'lora':
-            self.freeze(self.encoder)
-            lora_params = self._filter_named_params(
-                self.encoder.named_parameters(), ['lora'])
-            assert len(lora_params) > 0, "Did not find any LoRA parameters in the encoder"
-            self.unfreeze(lora_params)
-
-            params_to_optimize = [p for _, p in lora_params]
 
         elif mode == 'finetune':
             self.unfreeze(self.encoder) 
@@ -203,7 +196,7 @@ class LightningClsRegTask(LightningTask):
     def _step(self, batch, batch_idx, prefix="train"):
         x_dict, targets = batch
         
-        if self.training_mode == 'linear_probe':
+        if self.training_mode == 'frozen_backbone':
             with torch.no_grad():
                 x = self.encoder.get_blocks(x_dict)
         else:
@@ -218,20 +211,6 @@ class LightningClsRegTask(LightningTask):
     def loss(self, outputs, labels):
         return self.criterion(outputs, labels)
 
-    def _get_encoder_params_without_head(self, verbose=False, with_name=True):
-        if self.dot_str_of_linear_classifier is None:
-            out = self.encoder.named_parameters()
-        else:
-            out = []
-            for n,p in self.encoder.named_parameters():
-                if self.dot_str_of_linear_classifier not in n:
-                    out.append((n,p))
-                elif verbose:
-                    print(f"Skipping {n} from encoder parameters")
-
-        if not with_name:
-            out = [p for _, p in out]
-        return out
 
 
 class LightningSegmentationTask(LightningTask):
@@ -240,7 +219,6 @@ class LightningSegmentationTask(LightningTask):
         super().__init__(*args, **kwargs)
         assert MMSEGM_AVAIL, "MMSEG needs to be installed"
         self.embed_dim = self.cfg.model.embed_dim
-        self.criterion = nn.CrossEntropyLoss()
         self._build_default_segm_modules()
 
     def _build_default_segm_modules(self):
@@ -276,11 +254,13 @@ class LightningSegmentationTask(LightningTask):
         )
 
     def freeze_and_return_params(self):
-        self.freeze(self)
         if self.training_mode == 'finetune':
             self.unfreeze(self.encoder)
+            params_to_optimize = list(self.encoder.parameters())
         elif self.training_mode == 'segm_frozen_backbone':
             self.freeze(self.encoder)
+            self.encoder.eval()
+            params_to_optimize = []
         else:
             raise ValueError(f"Invalid mode: {self.training_mode}")
 
@@ -288,7 +268,7 @@ class LightningSegmentationTask(LightningTask):
         self.unfreeze(self.decoder)
         self.unfreeze(self.aux_head)
 
-        params_to_optimize = (
+        params_to_optimize += (
             list(self.neck.parameters())
             + list(self.decoder.parameters())
             + list(self.aux_head.parameters()))
@@ -320,7 +300,7 @@ class LightningSegmentationTask(LightningTask):
         images, targets = batch
         outputs = self(images)
         loss = self.loss(outputs, targets)
-        self.log_metrics(outputs[0], targets, loss, prefix)
+        self.log_metrics(outputs[0], targets, loss, prefix, apply_argmax=True)
         return loss
     
     def loss(self, outputs, labels):

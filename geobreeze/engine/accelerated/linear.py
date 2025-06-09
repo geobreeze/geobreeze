@@ -353,7 +353,6 @@ def test_on_datasets(
     iteration,
     best_classifier_on_val,
     test_class_mappings=[None],
-    batchwise_spectral_subsampling = False,
 ):
     results_list = []
     all_metrics_out = {}
@@ -364,8 +363,7 @@ def test_on_datasets(
             dataset=test_dataset,
             batch_size=batch_size,
             num_workers=num_workers,
-            sampler_type=SamplerType.EPOCH,
-            batchwise_spectral_subsampling=batchwise_spectral_subsampling,)
+            sampler_type=SamplerType.EPOCH,)
 
         metrics_result_list, all_metrics_results_dict = evaluate_linear_classifiers(
             feature_model,
@@ -421,12 +419,8 @@ def run_eval_linear(
     test_class_mapping_fpaths=[None],
     seed = 21,
 
-    batchwise_spectral_subsampling = {'train': False, 'val': False, 'test': False},
 ):
-
-    if any(batchwise_spectral_subsampling.values()):
-        assert distributed.get_global_size() == 1, "Batchwise spectral subsampling only supported on single GPU"
-
+    
     if test_metrics_list is None:
         test_metrics_list = [val_metrics] * len(test_dataset_lists)
     if test_class_mapping_fpaths == [None]:
@@ -490,7 +484,6 @@ def run_eval_linear(
         seed=seed,
         sampler_type=SamplerType.INFINITE,
         sampler_advance = start_iter,
-        batchwise_spectral_subsampling = batchwise_spectral_subsampling['train'],
     )
     val_data_loader = make_data_loader(
         val_dataset, 
@@ -500,7 +493,6 @@ def run_eval_linear(
         persistent_workers = dl_cfg.get('persistent_workers', True),
         seed = seed,
         sampler_type=SamplerType.EPOCH,
-        batchwise_spectral_subsampling = batchwise_spectral_subsampling['val'],
     )
 
 
@@ -556,7 +548,6 @@ def run_eval_linear(
             iteration,
             best_classifier_str,
             test_class_mappings=test_class_mappings,
-            batchwise_spectral_subsampling = batchwise_spectral_subsampling['test'],
             )
         
         for ds_id, cls_metric_dict in test_all_metrics_out.items():

@@ -54,17 +54,12 @@ def make_data_loader(
     pin_memory: bool = True,
     persistent_workers: bool = False,
     sampler_advance: int = 0,
-    batchwise_spectral_subsampling = False,
     collate_fn = geobreeze_collate_fn,
 ):
     
     sampler = make_sampler(
         dataset, sampler_type, shuffle=shuffle, seed=seed, sampler_advance=sampler_advance
     )
-
-    # collate_fn = None
-    # if batchwise_spectral_subsampling:
-    #     collate_fn = CollateSubsample(seed)
 
     data_loader = DataLoader(
         dataset,

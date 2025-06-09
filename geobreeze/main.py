@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import warnings
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
-from lightning.pytorch.loggers import MLFlowLogger, WandbLogger
+from lightning.pytorch.loggers import MLFlowLogger
 from lightning import Trainer
 import torch
 from lightning.pytorch import seed_everything
@@ -21,7 +21,6 @@ from geobreeze.datasets.base import collate_fn as geobreeze_collate_fn
 
 import logging
 import json
-from copy import deepcopy
 from factory import make_dataset, make_model
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -177,17 +176,16 @@ def do_linear_probe(cfg, model: EvalModelWrapper, datasets: dict):
         optim_cfg=cfg.optim.optim,
         val_monitor = cfg.data.task.metrics.ckpt_monitor,
         val_monitor_higher_is_better = cfg.data.task.metrics.ckpt_monitor_higher_is_better,
-        batchwise_spectral_subsampling = cfg.optim.batchwise_spectral_subsampling,
         resume = cfg.resume,
         save_checkpoint_frequency_epoch = cfg.optim.save_checkpoint_frequency_epoch,
     )
 
-    # process loss file
+    # process loss file for logging
     loss_file = os.path.join(cfg.output_dir, 'linear_probe_all_losses.csv')
     losses = pd.read_csv(loss_file).reset_index(drop=True)
     classifiers = losses.columns[1:]
 
-    # process metrics file
+    # process metrics file for logging (inefficient but works for now)
     metrics_file = os.path.join(cfg.output_dir, 'linear_probe_all_metrics.json')
     metrics_by_cls = {}
     with open(metrics_file, 'r') as f:
@@ -242,8 +240,8 @@ def do_linear_probe(cfg, model: EvalModelWrapper, datasets: dict):
     # plot_curves(cfg.output_dir) # plot average curve into .png file
     return pd.DataFrame(results_list)
 
-def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
-    assert not isinstance(datasets['test'], list), 'Finetune does not support multiple test datasets'
+def do_lightning(cfg, model: EvalModelWrapper, datasets: dict):
+    assert not isinstance(datasets['test'], list), 'Lightning does not support multiple test datasets'
 
     task = cfg.data.task.id
     experiment_name = cfg.experiment_name
@@ -272,13 +270,13 @@ def do_finetune(cfg, model: EvalModelWrapper, datasets: dict):
 
 
     # Callbacks
-    monitor = os.path.join('val',cfg.data.task.metrics.ckpt_monitor)
+    monitor = os.path.join('val', cfg.data.task.metrics.ckpt_monitor)
     callbacks = [
         ModelCheckpoint(
             dirpath=os.path.join(cfg.output_dir, "checkpoints"),
             filename="best_model-{epoch}",
             monitor=monitor,
-            mode="max",
+            mode='max' if cfg.data.task.metrics.ckpt_monitor_higher_is_better else 'min',
             save_last=True,
         ),
         LearningRateMonitor(logging_interval="epoch"),
@@ -360,7 +358,7 @@ def main(cfg: DictConfig):
     
     elif training_mode in ['finetune','segm_frozen_backbone','frozen_backbone']:
         logger.info('Running finetune')
-        results = do_finetune(cfg, model, datasets)
+        results = do_lightning(cfg, model, datasets)
 
     else:
         raise ValueError(f'Unknown training_mode: {training_mode}')

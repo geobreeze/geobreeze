@@ -1,14 +1,17 @@
-from .utils.utils import ChannelSampler, ChannelSimulator, extract_wavemus, load_ds_cfg
+from .utils.utils import load_ds_cfg
 import torch
 import torch
 import logging
-from omegaconf import OmegaConf, ListConfig
+from omegaconf import OmegaConf
 from copy import deepcopy
 
 logger = logging.getLogger('eval')
 
 
 class BaseDataset(torch.utils.data.Dataset):
+    """ Abstract base class for datasets in GeoBreeze. Allows easy subsampling
+        of channels and loading of metadata."""
+    
     def __init__(
             self, 
             ds_name, 
@@ -19,9 +22,8 @@ class BaseDataset(torch.utils.data.Dataset):
         ):
 
         self.ds_name = ds_name
-        ds_config = OmegaConf.create(load_ds_cfg(ds_name))
-        self.ds_config = ds_config
-        self.num_classes = ds_config['metainfo']['num_classes']
+        self.ds_config = OmegaConf.create(load_ds_cfg(ds_name))
+        self.num_classes = self.ds_config['metainfo']['num_classes']
         self.calibrate(metainfo=metainfo, band_ids=band_ids)
         self.withmetainfo_trf_list = withmetainfo_trf_list
 
