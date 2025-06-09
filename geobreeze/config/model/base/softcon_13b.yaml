@@ -1,0 +1,16 @@
+_target_: SoftCon
+
+dinov2_torchhub_id: dinov2_vitb14
+hf_filename: B13_vitb14_softcon.pth
+num_channels: 13
+
+image_resolution: 224
+embed_dim: 768
+patch_size: 14
+
+# pretrained_path: ${oc.env:MODEL_WEIGHTS_DIR}/B2_vitb14_softcon.pth
+
+blk_indices:
+  segm: [4,6,10,11]
+  linear_probe: [8, 9, 10, 11]
+  default_cls: [11]

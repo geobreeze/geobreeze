@@ -1,0 +1,14 @@
+_target_: Galileo
+
+pretrained_path: ${oc.env:MODEL_WEIGHTS_DIR}/galileo/encoder.pt
+input_key: s2
+
+embed_dim: 768
+image_resolution: 64
+patch_size: 8
+
+
+blk_indices: 
+  segm: [3, 5, 7, 11]
+  linear_probe: [8, 9, 10, 11]
+  default_cls: [11]

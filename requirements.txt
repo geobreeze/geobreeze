@@ -1,0 +1,31 @@
+torch==2.1.2
+torchvision==0.16.2
+numpy==1.26.4
+tensorboard
+loguru
+timm
+geobench
+torchmetrics
+ftfy
+regex
+Cython
+einops
+yacs
+kornia
+pydantic
+omegaconf
+# wandb
+python-dotenv
+cython
+# torchgeo @ git+https://github.com/microsoft/torchgeo.git
+torchgeo==0.6.0
+fastparquet
+mlflow
+# ray>=2.40.0
+huggingface-hub>=0.27.1
+peft>=0.14.0
+optuna
+tifffile
+fvcore
+imagecodecs
+wandb

@@ -1,0 +1,48 @@
+defaults:
+- task/cls
+
+
+train:
+  _target_: GeoBenchDataset
+  ds_name: m-eurosat
+  split: train
+  withmetainfo_trf:
+  - _target_: custom.DownUpSample
+    '1': '0.5'
+    '2': '0.5'
+    '3': '0.5'
+    '7': '0.5'
+  - _target_: custom.KorniaWrapper
+    __target__: Resize
+    size: ["${model.image_resolution}","${model.image_resolution}"]
+    keepdim: true
+
+val:
+  _target_: GeoBenchDataset
+  ds_name: m-eurosat
+  split: val
+  withmetainfo_trf:
+  - _target_: custom.DownUpSample
+    '1': '0.5'
+    '2': '0.5'
+    '3': '0.5'
+    '7': '0.5'
+  - _target_: custom.KorniaWrapper
+    __target__: Resize
+    size: ["${model.image_resolution}","${model.image_resolution}"]
+    keepdim: true
+
+test:
+  _target_: GeoBenchDataset
+  ds_name: m-eurosat
+  split: test
+  withmetainfo_trf:
+  - _target_: custom.DownUpSample
+    '1': '0.5'
+    '2': '0.5'
+    '3': '0.5'
+    '7': '0.5'
+  - _target_: custom.KorniaWrapper
+    __target__: Resize
+    size: ["${model.image_resolution}","${model.image_resolution}"]
+    keepdim: true

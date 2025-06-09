@@ -1,0 +1,12 @@
+task_id: classification
+num_classes: 12
+gsd: 15
+img_size: 332
+
+bands:
+- id: landsat8/B04
+- id: landsat8/B03
+- id: landsat8/B02
+- id: landsat8/B05
+- id: landsat8/B06
+- id: landsat8/B07

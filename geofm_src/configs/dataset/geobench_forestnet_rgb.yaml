@@ -1,8 +1,0 @@
-defaults:
-  - geobench_forestnet
-  - l8_rgb
-
-image_resolution: 224
-
-
-

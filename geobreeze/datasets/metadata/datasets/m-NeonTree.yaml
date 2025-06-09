@@ -1,0 +1,12 @@
+task: segmentation
+num_classes: 2
+
+image_resolution: 400
+
+bands:
+- id: sentinel2/B04
+  name: Red
+- id: sentinel2/B03
+  name: Green
+- id: sentinel2/B02
+  name: Blue

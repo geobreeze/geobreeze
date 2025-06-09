@@ -1,0 +1,19 @@
+defaults:
+- task/cls
+
+
+train:
+  _target_: Resisc45
+  split: train
+  # transform: ${_vars.augm.cls.val}
+
+val:
+  _target_: Resisc45
+  split: val
+  transform: ${_vars.augm.cls.val}
+
+test:
+  _target_: Resisc45
+  split: test
+  transform: ${_vars.augm.cls.val}
+

@@ -1,0 +1,11 @@
+task: regression
+num_classes: 1  # actually num_variables, but name num_classes to avoid errors
+multilabel: false # not applicable for regression, but put here to avoid errors
+
+bands:
+- name: unknown
+  gaussian:
+    mu: 10400
+    std: 250
+  gsd: 5000
+  srf_filename: blue.npy

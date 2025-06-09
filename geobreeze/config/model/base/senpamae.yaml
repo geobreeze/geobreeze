@@ -1,0 +1,13 @@
+_target_: SenPaMAE
+
+pretrained_path: ${oc.env:MODEL_WEIGHTS_DIR}/senpamae_doubleParameterEmbedding.pt
+srf_dir: /home/hk-project-pai00028/tum_mhj8661/code/srfs
+
+embed_dim: 768
+image_resolution: 144
+patch_size: 16
+
+blk_indices:
+  segm: [4,6,10,11]
+  linear_probe: [8, 9, 10, 11]
+  default_cls: [11]

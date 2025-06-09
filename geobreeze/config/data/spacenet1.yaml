@@ -1,0 +1,20 @@
+defaults:
+- task/segmentation
+
+train:
+  _target_: SpaceNet1Dataset
+  root: ${oc.env:DATASETS_DIR}/spacenet1
+  split: train
+  transform: ${_vars.augm.segm.train}
+
+val:
+  _target_: SpaceNet1Dataset
+  root: ${oc.env:DATASETS_DIR}/spacenet1
+  split: val
+  transform: ${_vars.augm.segm.val}
+
+test:
+  _target_: SpaceNet1Dataset
+  root: ${oc.env:DATASETS_DIR}/spacenet1
+  split: test
+  transform: ${_vars.augm.segm.val}

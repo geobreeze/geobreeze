@@ -1,0 +1,18 @@
+id: regression
+
+
+criterion:
+  _target_: torch.nn.MSELoss
+
+
+metrics: 
+  train:
+  - id: MSE
+
+  val:
+  - id: MSE
+  - id: RMSE
+  - id: MAE
+
+  ckpt_monitor: MSE
+  ckpt_monitor_higher_is_better: false

@@ -1,0 +1,30 @@
+defaults:
+- task/cls
+
+
+train:
+  _target_: GeoBenchDataset
+  ds_name: m-so2sat
+  split: train
+  band_ids: [0, 4]
+  transform: ${_vars.augm.cls.train}
+  metainfo:
+    chn_ids: gaussian.mu
+
+val:
+  _target_: GeoBenchDataset
+  ds_name: m-so2sat
+  split: val
+  band_ids: [0, 4]
+  transform: ${_vars.augm.cls.val}
+  metainfo:
+    chn_ids: gaussian.mu
+
+test:
+  _target_: GeoBenchDataset
+  ds_name: m-so2sat
+  split: test
+  band_ids: [0, 4]
+  transform: ${_vars.augm.cls.val}
+  metainfo:
+    chn_ids: gaussian.mu

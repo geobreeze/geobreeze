@@ -1,0 +1,14 @@
+task: classification
+num_classes: 4
+
+# gsd: 10
+image_resolution: 320
+
+# Unknown rgb sensor (some aerial sensor), taking sentinel2 rgb bands and overwrite names to conform with geobench
+bands:
+- id: sentinel2/B04
+  name: Red
+- id: sentinel2/B03
+  name: Green
+- id: sentinel2/B02
+  name: Blue

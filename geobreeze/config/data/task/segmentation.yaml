@@ -1,0 +1,24 @@
+id: segmentation
+
+criterion:
+  _target_: torch.nn.CrossEntropyLoss
+
+metrics: 
+
+  train:
+  - id: JaccardIndex
+    average: micro
+  - id: F1Score
+    average: micro
+  - id: MeanIoU
+
+  val:
+  - id: JaccardIndex
+    average: micro
+  - id: F1Score
+    average: micro
+  - id: MeanIoU
+
+  # not actually needed for segmentation since we do not train multiple models at once
+  ckpt_monitor: mIoU
+  ckpt_monitor_higher_is_better: true 

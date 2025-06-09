@@ -1,0 +1,29 @@
+defaults:
+- task/cls
+
+
+train:
+  _target_: GeoBenchDataset
+  ds_name: m-so2sat
+  split: train
+  band_ids: [0,4,4]
+  transform: ${_vars.augm.cls.train}
+
+val:
+  _target_: GeoBenchDataset
+  ds_name: m-so2sat
+  split: val
+  band_ids: [0,4,4]
+  transform: ${_vars.augm.cls.val}
+
+test:
+- _target_: GeoBenchDataset
+  ds_name: m-so2sat
+  split: test
+  band_ids: [0,4,4]
+  transform: ${_vars.augm.cls.val}
+- _target_: GeoBenchDataset
+  ds_name: m-so2sat
+  split: test
+  band_ids: [5,3,1]
+  transform: ${_vars.augm.cls.val}

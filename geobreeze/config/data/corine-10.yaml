@@ -1,0 +1,27 @@
+defaults:
+- task/cls_multilabel
+
+# MD: [0,4,10,14,23,26,28,44,47,49,59,73,74,122,135,160]
+# SD: [5,15,23,30,38,47,53,74]
+# MD_rgb: [47,28,14]
+# SD_rgb: [47,30,15]
+
+
+train:
+  _target_: CorineDataset
+  root: ${oc.env:DATASETS_DIR}/spectral_earth
+  split: train
+  transform: ${_vars.augm.cls.train}
+  subset: 0.10
+
+val:
+  _target_: CorineDataset
+  root: ${oc.env:DATASETS_DIR}/spectral_earth
+  split: val
+  transform: ${_vars.augm.cls.val}
+
+test:
+  _target_: CorineDataset
+  root: ${oc.env:DATASETS_DIR}/spectral_earth
+  split: test
+  transform: ${_vars.augm.cls.val}

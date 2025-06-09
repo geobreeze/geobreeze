@@ -1,0 +1,14 @@
+_target_: Croma
+
+size: base
+modality: SAR # 12 channel input
+hf_filename: CROMA_base.pt
+
+image_resolution: 120
+embed_dim: 768
+patch_size: 8
+
+blk_indices:
+  segm: [2,4,5,6]
+  linear_probe: [3,4,5,6]
+  default_cls: [6]

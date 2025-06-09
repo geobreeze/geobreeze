@@ -1,0 +1,94 @@
+output_dir:
+seed: 21
+num_gpus: 1
+add_defining_args: true
+resume: true
+logger: none
+overwrite: false
+
+model:
+  _target_: null
+
+data:
+  task: null
+
+  train: 
+    _target_: null
+    transform: null
+  
+  val:
+    _target_: null
+    transform: null
+
+  test: null
+
+# specific to training_mode
+optim: null
+
+dl:
+  num_workers: 8
+  pin_memory: true
+  batch_size: 256
+
+
+_vars:
+  augm: # default augmentations
+    cls:
+
+      train:
+      - _target_: RandomHorizontalFlip
+        p: 0.5
+        keepdim: true
+      - _target_: RandomVerticalFlip
+        p: 0.5
+        keepdim: true
+      - _target_: RandomResizedCrop
+        size: ["${model.image_resolution}","${model.image_resolution}"]
+        scale: [0.8, 1.0]
+        keepdim: true
+
+      val:
+      - _target_: Resize
+        size: ["${model.image_resolution}","${model.image_resolution}"]
+        keepdim: true
+
+      train_resize:
+      - _target_: Resize
+        size: -1
+        keepdim: true
+      - _target_: RandomHorizontalFlip
+        p: 0.5
+        keepdim: true
+      - _target_: RandomVerticalFlip
+        p: 0.5
+        keepdim: true
+      - _target_: RandomResizedCrop
+        size: ["${model.image_resolution}","${model.image_resolution}"]
+        scale: [0.8, 1.0]
+        keepdim: true
+
+      val_resize:
+      - _target_: Resize
+        size: -1
+        keepdim: true
+      - _target_: Resize
+        size: "${model.image_resolution}"
+        keepdim: true
+
+    segm:
+      train:
+      - _target_: RandomHorizontalFlip
+        p: 0.5
+        keepdim: true
+      - _target_: RandomVerticalFlip
+        p: 0.5
+        keepdim: true
+      - _target_: RandomResizedCrop
+        size: ["${model.image_resolution}","${model.image_resolution}"]
+        scale: [0.8, 1.0]
+        keepdim: true
+
+      val:
+      - _target_: Resize
+        size: ["${model.image_resolution}","${model.image_resolution}"]
+        keepdim: true
