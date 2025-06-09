@@ -1,26 +1,24 @@
 #!/bin/bash
-#SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=leonard.waldmann@tum.de
-#SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
-
-#SBATCH --job-name=gsd_inv_eurosat
-#SBATCH --partition=accelerated
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=20        # default: 38
-#SBATCH --time=00:40:00
-#SBATCH --array=0-17
+# optional: your sbatch options
+# ...
+# SBATCH array=0-30
 
 
-# ---------- HOREKA ------------
-# eval_cmd='srun -K1 --export=ALL /home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval2/bin/python /home/hk-project-pai00028/tum_mhj8661/code/geobreeze/geobreeze/main.py'
-REPO_PATH=/home/hk-project-pai00028/tum_mhj8661/code/geobreeze
+# setup
+REPO_PATH=/path/to/geobreeze
+PYTHON=/path/to/your/python/bin
+
 export $(cat $REPO_PATH/.env)
-cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval5/bin/python $REPO_PATH/geobreeze/main.py"
-# -----------------------------
+cmd="$PYTHON $REPO_PATH/geobreeze/main.py"
 
-# m-eurosat
+
+
+"""
+This file executes experiments of subsampling channels. The code below is only
+for m-eurosat, other datasets can be executed similarly.
+"""
+
+
 
 dataset=m-eurosat_resize
 dataset_folder_name=m-eurosat

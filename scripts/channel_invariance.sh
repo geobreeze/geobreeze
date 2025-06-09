@@ -1,24 +1,21 @@
 #!/bin/bash
-#SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=leonard.waldmann@tum.de
-#SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
-
-#SBATCH --job-name=sinv_euro_senpa
-#SBATCH --partition=accelerated
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=20        # default: 38
-#SBATCH --time=00:30:00
-#SBATCH --array=30
+# optional: your sbatch options
+# ...
+# SBATCH array=0-30
 
 
-# ---------- HOREKA ------------
-# eval_cmd='srun -K1 --export=ALL /home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval2/bin/python /home/hk-project-pai00028/tum_mhj8661/code/geobreeze/geobreeze/main.py'
-REPO_PATH=/home/hk-project-pai00028/tum_mhj8661/code/geobreeze
+# setup
+REPO_PATH=/path/to/geobreeze
+PYTHON=/path/to/your/python/bin
+
 export $(cat $REPO_PATH/.env)
-cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO_PATH/geobreeze/main.py"
-# -----------------------------
+cmd="$PYTHON $REPO_PATH/geobreeze/main.py"
+
+
+
+"""
+This file executes experiments of subsampling channels.
+"""
 
 
 

@@ -1,6 +1,8 @@
 # Geobreeze: Simple, Fast, and Flexible Evaluation of Remote Sensing Foundation Models
 
-Geobreeze enables evaluation of remote sensing foundation models (RSFMs). Our unique value proposition is an abstract model wrapper class designed for ViT-based RSFMs. After implementing this wrapper, evaluation can be performed over multiple datasets with different tasks and evaluation protocols.
+> **Note:** This is the first version of Geobreeze. We highly welcome your feedback! Please feel free to [open an issue](https://github.com/Panopticon-FM/geobreeze/issues) for any questions, or reach out via email at [leonard.waldmann@tum.de](mailto:leonard.waldmann@tum.de).
+
+Geobreeze enables evaluation of remote sensing foundation models (RSFMs). Our unique value proposition is an abstract model wrapper class designed for ViT-based RSFMs. After implementing this wrapper for an RSFM, evaluation can be performed over multiple datasets with different tasks and evaluation protocols.
 
 Core features:
 - Simple: Single compact model wrapper (e.g., 44 lines of code for DINOv2) for all tasks
@@ -8,8 +10,6 @@ Core features:
 - Flexible: 10+ model & 17+ dataset wrappers implemented, integration with TorchGeo datasets
 
 Geobreeze was created for the evaluation of [Panopticon](https://github.com/Panopticon-FM/panopticon). It evolved from other repositories, see [Attribution](#attribution).
-<!-- 
-and evolved from the `geofm` branch in the [DOFA-pytorch](https://github.com/xiong-zhitong/DOFA-pytorch) repository (see [Attribution](#attribution)). The code in `geofm/engine/accelerated` is from [DINOv2](https://github.com/facebookresearch/dinov2) with minor adjustments. -->
 
 ## Setup
 

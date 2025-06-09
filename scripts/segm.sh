@@ -2,35 +2,29 @@
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
-
-#SBATCH --job-name=dinvo2_segm
-#SBATCH --partition=accelerated
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=38        # default: 38
-#SBATCH --time=2:00:00
-#SBATCH --array=0-23
+#!/bin/bash
+# optional: your sbatch options
+# ...
+# SBATCH array=0-30
 
 
-# ---------- HOREKA ------------
-REPO_PATH=/home/hk-project-pai00028/tum_mhj8661/code/geobreeze
+# setup
+REPO_PATH=/path/to/geobreeze
+PYTHON=/path/to/your/python/bin
+
 export $(cat $REPO_PATH/.env)
-PYTHON=/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/e3/bin/python
-# PYTHON=python
 cmd="$PYTHON $REPO_PATH/geobreeze/main.py"
-# -----------------------------
-echo $(which $PYTHON)
 
-# list all tasks with argument as string separated by spaces:
-#  - model
-#  - dataset
-#  - batch_size
-#  - channel ids to pass from dataset, -1 or empty for all
-#  - subset in percentage to use, -1 for no subset
+
+"""
+This file executes experiments for segmentation with frozen backbone. 
+Below, we only list geobench datasets with dinov2. Other datasets and models can 
+be added similarly. All other model configurations are already created in `config/models`.
+"""
+
+
 
 base_output_dir=/hkfs/work/workspace/scratch/tum_mhj8661-panopticon/dino_logs/debug
-
 
 tasks=(
     # m-eurosat, 0-7 (50e = 0h15 (lp)) 
@@ -44,7 +38,6 @@ tasks=(
 )
 
 lrs="1e-3 1e-4 1e-5 1e-6"
-# lrs="1e-4"
 mode=segmentation
 
 

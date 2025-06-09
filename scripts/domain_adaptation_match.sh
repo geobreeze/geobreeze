@@ -2,26 +2,24 @@
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
+#!/bin/bash
+# optional: your sbatch options
+# ...
+# SBATCH array=0-30
 
-#SBATCH --job-name=adapt_lin
-#SBATCH --partition=accelerated
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=38        # default: 38
-#SBATCH --time=0:50:00
-#SBATCH --array=18
 
-# fastdevrun='--fastdevrun'
-# eval="eval.only_eval=True"
+# setup
+REPO_PATH=/path/to/geobreeze
+PYTHON=/path/to/your/python/bin
 
-# ---------- HOREKA ------------
-# eval_cmd='srun -K1 --export=ALL /home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval2/bin/python /home/hk-project-pai00028/tum_mhj8661/code/geobreeze/geobreeze/main.py'
-REPO_PATH=/home/hk-project-pai00028/tum_mhj8661/code/geobreeze
 export $(cat $REPO_PATH/.env)
-cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO_PATH/geobreeze/main.py"
-OLD_ODIR=/hkfs/work/workspace/scratch/tum_mhj8661-panopticon/dino_logs/fmplayground
-# -----------------------------
+cmd="$PYTHON $REPO_PATH/geobreeze/main.py"
+
+
+"""
+This file executes experiments for domain adaptation with matching channels.
+We match the channels to the closest channel in central wavelength. 
+"""
 
 
 all_tasks=(

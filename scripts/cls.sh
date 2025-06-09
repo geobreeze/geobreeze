@@ -1,24 +1,22 @@
 #!/bin/bash
-#SBATCH --mail-type=END,FAIL
-#SBATCH --mail-user=leonard.waldmann@tum.de
-#SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
-
-#SBATCH --job-name=senpamae_dt_tc
-#SBATCH --partition=accelerated
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=38        # default: 38
-#SBATCH --time=3:00:00
-#SBATCH --array=0-1
+# optional: your sbatch options
+# ...
+# SBATCH array=0-30
 
 
-# ---------- HOREKA ------------
-REPO_PATH=/home/hk-project-pai00028/tum_mhj8661/code/geobreeze
+# setup
+REPO_PATH=/path/to/geobreeze
+PYTHON=/path/to/your/python/bin
+
 export $(cat $REPO_PATH/.env)
-# cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO_PATH/geobreeze/main.py"
-cmd="python $REPO_PATH/geobreeze/main.py"
-# -----------------------------
+cmd="$PYTHON $REPO_PATH/geobreeze/main.py"
+
+
+"""
+This file executes experiments for linear probing or kNN classification. 
+Below, we only list m-eurosat and resisc45. Other datasets can be added similarly.
+Most of the dataset configurations are already created in `config/data`.
+"""
 
 
 # list all tasks with argument as string separated by spaces:
@@ -29,7 +27,7 @@ cmd="python $REPO_PATH/geobreeze/main.py"
 #  - subset in percentage to use, -1 for no subset
 
 base_output_dir=/hkfs/work/workspace/scratch/tum_mhj8661-panopticon/dino_logs/debug
-mode=knn # or knn
+mode=linear_Probe # or knn
 
 
 all_tasks=(

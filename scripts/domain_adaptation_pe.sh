@@ -2,25 +2,26 @@
 #SBATCH --mail-type=END,FAIL
 #SBATCH --mail-user=leonard.waldmann@tum.de
 #SBATCH --output=/home/hk-project-pai00028/tum_mhj8661/code/slurm-%A_%a-%x.out
-
-#SBATCH --job-name=replace_pe_adamw
-#SBATCH --partition=accelerated
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=20        # default: 38
-#SBATCH --time=04:00:00
-#SBATCH --array=72-111
+#!/bin/bash
+# optional: your sbatch options
+# ...
+# SBATCH array=0-30
 
 
-# ---------- HOREKA ------------
-# eval_cmd='srun -K1 --export=ALL /home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval2/bin/python /home/hk-project-pai00028/tum_mhj8661/code/geobreeze/geobreeze/main.py'
-REPO_PATH=/home/hk-project-pai00028/tum_mhj8661/code/geobreeze
+# setup
+REPO_PATH=/path/to/geobreeze
+PYTHON=/path/to/your/python/bin
+
 export $(cat $REPO_PATH/.env)
-cmd="/home/hk-project-pai00028/tum_mhj8661/miniforge3/envs/eval/bin/python $REPO_PATH/geobreeze/main.py"
-# -----------------------------
+cmd="$PYTHON $REPO_PATH/geobreeze/main.py"
 
-# m-eurosat
+
+"""
+This file executes experiments for domain adaptation with re-training a conv2d as
+patch embedding with the correct and fixed number of channels.
+"""
+
+
 
 tasks=(
     "corine-sd frozen_backbone croma_12b -1 200"
