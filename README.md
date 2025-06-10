@@ -7,7 +7,7 @@ Geobreeze enables evaluation of remote sensing foundation models (RSFMs). Our un
 Core features:
 - Simple: Single compact model wrapper (e.g., 44 lines of code for DINOv2) for all tasks
 - Fast: Accelerated linear probing (e.g., 78 configurations in parallel at once with 900 batch size on 40 GB GPU RAM for SoftCon)
-- Flexible: 10+ model & 17+ dataset wrappers implemented, integration with TorchGeo datasets
+- Flexible: 10+ model & 17+ dataset wrappers implemented
 
 Geobreeze was created for the evaluation of [Panopticon](https://github.com/Panopticon-FM/panopticon). It evolved from other repositories, see [Attribution](#attribution).
 
