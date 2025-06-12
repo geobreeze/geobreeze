@@ -84,7 +84,11 @@ python geobreeze/main.py \
    optim.check_val_every_n_epoch=2 \
    seed=21 
 ```
-In `scripts/`, there are bash files for computing the evaluation of Panopticon. 
+In `scripts/`, there are bash files for computing the evaluation of Panopticon. You can call these with
+1. `bash /scripts/your_choice.sh` to executed all tasks defined in the script.
+2. `bash /scripts/your_choice.sh id` to executed the task with integer id `id`
+3. Add your slurm configuration on top of `.sh` files and execute with slurm via array jobs, where each jobs the task with the id `$SLURM_ARRAY_TASK_ID`.
+To collect (nested) results of your computations into a .csv, call `geobreeze/collect_results.py /path/to/your/folder`.
 
 ## Add Models and Datasets
 ### Models
