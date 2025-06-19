@@ -11,23 +11,21 @@
 # setup
 REPO_PATH=/path/to/geobreeze
 PYTHON=/path/to/your/python/bin
+base_output_dir=/path/to/your/output/dir
 
 export $(cat $REPO_PATH/.env)
 cmd="$PYTHON $REPO_PATH/geobreeze/main.py"
 
 
-"""
-This file executes experiments for segmentation with frozen backbone. 
-Below, we only list geobench datasets with dinov2. Other datasets and models can 
-be added similarly. All other model configurations are already created in `config/models`.
-"""
+
+# This file executes experiments for segmentation with frozen backbone. 
+# Below, we only list geobench datasets with dinov2. Other datasets and models can 
+# be added similarly. All other model configurations are already created in `config/models`.
 
 
 
-base_output_dir=/hkfs/work/workspace/scratch/tum_mhj8661-panopticon/dino_logs/debug
 
 tasks=(
-    # m-eurosat, 0-7 (50e = 0h15 (lp)) 
     'base/dinov2 m-pv4ger-seg 200'
     'base/dinov2 m-chesapeake 200 [0,1,2]'
     'base/dinov2 m-cashew-plant 200 [3,2,1]'
@@ -35,6 +33,54 @@ tasks=(
     'base/dinov2 m-nz-cattle 200'
     'base/dinov2 m-NeonTree 200'
 
+    'base/panopticon m-pv4ger-seg 200'
+    'base/panopticon m-chesapeake 200'
+    'base/panopticon m-cashew-plant 200'
+    'base/panopticon m-SA-crop-type 200'
+    'base/panopticon m-nz-cattle 200'
+    'base/panopticon m-NeonTree 200'
+
+    'base/senpamae m-pv4ger-seg 200'
+    'base/senpamae m-chesapeake 200'
+    'base/senpamae m-cashew-plant 200'
+    'base/senpamae m-SA-crop-type 200'
+    'base/senpamae m-nz-cattle 200'
+    'base/senpamae m-NeonTree 200'
+
+    'base/dofa m-pv4ger-seg 200'
+    'base/dofa m-chesapeake 200'
+    'base/dofa m-cashew-plant 200'
+    'base/dofa m-SA-crop-type 200'
+    'base/dofa m-nz-cattle 200'
+    'base/dofa m-NeonTree 200'
+
+    # 'base/softcon_13b m-pv4ger-seg 200'
+    # 'base/softcon_13b m-chesapeake 200'
+    'base/softcon_13b m-cashew-plant 200'
+    'base/softcon_13b m-SA-crop-type 200'
+    # 'base/softcon_13b m-nz-cattle 200'
+    # 'base/softcon_13b m-NeonTree 200'
+
+     # 'base/croma_12b m-pv4ger-seg 200'
+    # 'base/croma_12b m-chesapeake 200'
+    'base/croma_12b m-cashew-plant 200 [0,1,2,3,4,5,6,7,8,9,11,12]'
+    'base/croma_12b m-SA-crop-type 200 [0,1,2,3,4,5,6,7,8,9,11,12]'
+    # 'base/croma_12b m-nz-cattle 200'
+    # 'base/croma_12b m-NeonTree 200'
+
+    'base/anysat_spot m-pv4ger-seg 100'
+    'base/anysat_naip m-chesapeake 100'
+    'base/anysat_s2 m-cashew-plant 100'
+    'base/anysat_s2 m-SA-crop-type 100'
+    'base/anysat_spot m-nz-cattle 100'
+    'base/anysat_spot m-NeonTree 100'
+
+        # 'base/croma_12b m-pv4ger-seg 200'
+    # 'base/croma_12b m-chesapeake 200'
+    'base/galileo_s2 m-cashew-plant 100 [1,2,3,4,5,6,7,8,11,12]'
+    'base/galileo_s2 m-SA-crop-type 100 [1,2,3,4,5,6,7,8,11,12]'
+    # 'base/croma_12b m-nz-cattle 200'
+    # 'base/croma_12b m-NeonTree 200'
 )
 
 lrs="1e-3 1e-4 1e-5 1e-6"
@@ -78,8 +124,12 @@ do
     ids=$5
     subset=$6
 
-    # potentially subset channels
     add_kwargs=""
+
+    # uncomment if fastdevrun
+    # add_kwargs+="optim.epochs=1 dl.batch_size=20 overwrite=True"
+
+    # potentially subset channels
     if [ "$ids" == "" ]; then
         print_ids=-1
     elif [ "$ids" != "-1" ]; then

@@ -10,14 +10,27 @@ metrics:
     average: micro
   - id: F1Score
     average: micro
-  - id: MeanIoU
+  - id: mIoU
 
   val:
   - id: JaccardIndex
     average: micro
+  - id: JaccardIndex
+    average: macro
+  - id: CustomJaccard
+    average: micro
+  - id: CustomJaccard
+    average: macro
   - id: F1Score
     average: micro
-  - id: MeanIoU
+  - id: F1Score
+    average: macro
+  - id: mIoU
+  - id: MulticlassAccuracy
+    average: micro
+  - id: MulticlassAccuracy
+    average: macro
+
 
   # not actually needed for segmentation since we do not train multiple models at once
   ckpt_monitor: mIoU

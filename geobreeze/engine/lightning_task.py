@@ -66,18 +66,19 @@ class LightningTask(LightningModule):
         # print(f'Logging metrics: outputs={tuple(outputs.shape)}, targets={tuple(targets.shape)}')
 
         if apply_argmax:
-            out_dict = metrics(
+            metrics(
                 torch.argmax(outputs, axis=1),
                 targets.long()
             )
         else:  
-            out_dict = metrics(outputs, targets)
+            metrics(outputs, targets)
 
         on_step = True if prefix == 'train' else False
         on_epoch = True
 
         self.log(f"{prefix}/loss", loss, on_step=on_step, on_epoch=on_epoch, prog_bar=True)
-        self.log_dict(out_dict, on_step=on_step, on_epoch=on_epoch, prog_bar=True)
+        # self.log_dict(out_dict, on_step=on_step, on_epoch=on_epoch, prog_bar=True)
+        self.log_dict(metrics, on_step=on_step, on_epoch=on_epoch, prog_bar=True)
 
 
     def training_step(self, batch, batch_idx):

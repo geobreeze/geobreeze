@@ -10,8 +10,7 @@ from typing import Any, Dict, Optional, List
 
 import torch
 from torch import Tensor
-from torchmetrics import MeanAbsoluteError, MetricCollection
-from torchmetrics import Accuracy
+from torchmetrics import MeanAbsoluteError, MetricCollection, Accuracy, Metric
 from torchmetrics.classification import MulticlassAccuracy, MultilabelAveragePrecision, MultilabelF1Score, JaccardIndex, F1Score
 from torchmetrics.regression import MeanSquaredError
 from torchmetrics.segmentation import MeanIoU
@@ -29,7 +28,8 @@ def build_metric(metric_cfg: List, num_classes, key_prefix='') -> MetricCollecti
         num_classes = num_classes.item()
 
     ret = {}
-    sync_on_compute = distributed.is_enabled()
+    sync_on_compute = distributed.is_enabled() # important if we plan to do a 
+        # custom synchronized backend
     for cfg in metric_cfg:
         id = cfg.pop('id')
 
@@ -65,40 +65,84 @@ def build_metric(metric_cfg: List, num_classes, key_prefix='') -> MetricCollecti
             defaults = dict(num_outputs=1) # Average over all outputs
             defaults.update(cfg)
             key = f'MSE'
-            val = MeanSquaredError(**defaults)
+            val = MeanSquaredError(**defaults, sync_on_compute=sync_on_compute)
         
         elif id == 'RMSE':
             defaults = dict(num_outputs=1, squared=False) # Average over all outputs
             defaults.update(cfg)
             key = f'RMSE'
-            val = MeanSquaredError(**defaults)
+            val = MeanSquaredError(**defaults, sync_on_compute=sync_on_compute)
 
         elif id == 'JaccardIndex':
             defaults = dict(average='micro', task='multiclass')
             defaults.update(cfg)
-            key = 'jaccard'
-            val = JaccardIndex(num_classes=num_classes, **defaults)
+            key = f'jaccard_{defaults["average"]}'
+            val = JaccardIndex(num_classes=num_classes, **defaults, sync_on_compute=sync_on_compute)
 
-        elif id == 'MeanIoU':
+        elif id == 'mIoU':
             defaults = dict(input_format='index')
             defaults.update(cfg)
-            key = 'mIoU'
-            val = MeanIoU(num_classes=num_classes, )
+            key = 'mIoU' + '_'.join([f'{k}={v}' for k, v in defaults.items() if k != 'input_format'])
+            val = MeanIoU(num_classes=num_classes, **defaults, sync_on_compute=sync_on_compute)
 
         elif id == 'F1Score':
             defaults = dict(average='micro', task='multiclass')
             defaults.update(cfg)
-            key = 'F1Score'
-            val = F1Score(num_classes=num_classes, **defaults)
+            key = f'F1Score_{defaults["average"]}'
+            val = F1Score(num_classes=num_classes, **defaults, sync_on_compute=sync_on_compute)
 
         elif id == 'MAE':
             defaults = dict(num_outputs=1)
             defaults.update(cfg)
             key = f'MAE'
-            val = MeanAbsoluteError(**defaults)
+            val = MeanAbsoluteError(**defaults, sync_on_compute=sync_on_compute)
+
+        elif id == 'CustomJaccard':
+            defaults = dict(average='macro', input_format='index')
+            defaults.update(cfg)
+            key = f'CustomJaccard_{defaults["average"]}'
+            val = CustomJaccard(num_classes=num_classes, **defaults, sync_on_compute=sync_on_compute)
+
         else:
             raise ValueError(f"Unknown metric {id}")
         
         ret[f'{key_prefix}{key}'] = val
     return MetricCollection(ret)
 
+
+
+class CustomJaccard(Metric):
+    """ Custom implementation of Jaccard Index for multiclass classification to 
+        compare against torchmetrics.classification.JaccardIndex and 
+        torchmetrics.segmentation.MeanIoU."""
+
+    def __init__(self, num_classes: int, input_format='index', average='macro', **kwargs):
+        super().__init__(**kwargs)
+        assert input_format == 'index', 'Only index supported yet'
+        assert average in ['macro', 'micro'], 'Only macro and micro averaging supported'
+
+        self.num_classes = num_classes
+        self.add_state('intersection', 
+                       torch.zeros(num_classes, dtype=torch.int), 
+                       dist_reduce_fx='sum')
+        self.add_state('union', 
+                       torch.zeros(num_classes, dtype=torch.int), 
+                       dist_reduce_fx='sum')
+        self.average = average
+
+    def update(self, preds: Tensor, target: Tensor):
+
+        for c in range(self.num_classes):
+            self.intersection[c] += torch.sum((preds == c) & (target == c))
+            self.union[c] += torch.sum((preds == c) | (target == c))
+
+    def compute(self) -> Tensor:
+        if self.average == 'macro':
+            iou = self.intersection / (self.union + 1e-6)
+            return iou.mean()
+        elif self.average == 'micro':
+            intersection = self.intersection.sum()
+            union = self.union.sum()
+            return (intersection / (union + 1e-6))
+        else:
+            raise ValueError(f"Unknown average {self.average}")

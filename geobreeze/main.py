@@ -47,6 +47,8 @@ def process_config(cfg):
         with open_dict(cfg):
             cfg.optim.lr = cfg.optim.base_lr * cfg.dl.batch_size / 256 * cfg.num_gpus
             # logger.info(f'Scaled learning rate from {cfg.optim.base_lr} to {cfg.optim.lr} (bsz={cfg.dl.batch_size}, num_gpus={cfg.num_gpus})')
+            cfg.optim.check_val_every_n_epoch = min(
+                cfg.optim.check_val_every_n_epoch, cfg.optim.epochs)
 
         blks = 'segm' if cfg.data.task.id == 'segmentation' else 'default_cls'
 
@@ -323,7 +325,7 @@ def do_lightning(cfg, model: EvalModelWrapper, datasets: dict):
 
     # Test
     best_checkpoint_path = callbacks[0].best_model_path
-    results_per_ds_list = trainer.test(pl_task, test_dl, ckpt_path=best_checkpoint_path)
+    results_per_ds_list = Trainer(devices=1, logger=exp_logger).test(pl_task, test_dl, ckpt_path=best_checkpoint_path)
     results_list = [dict(
         metric_str=k,
         val=v,

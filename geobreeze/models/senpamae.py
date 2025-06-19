@@ -93,10 +93,10 @@ class SenPaMAE(EvalModelWrapper):
 
         return blocks_list
 
-    def get_segm_blks(self, x):
+    def get_segm_blks(self, x_dict):
         # get transformer blocks and average over the channel dimension
-        B, C, H, W = x.shape
-        x = self.get_blocks(x)
+        B, C, H, W = x_dict['imgs'].shape
+        x = self.get_blocks(x_dict)
 
         h = H // self.patch_size
         w = W // self.patch_size

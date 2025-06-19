@@ -65,7 +65,7 @@ class Croma(EvalModelWrapper):
         # the following is how the tokens are passed into the {mod}_GAP_FFN networks
         return self.norm(block_list[-1]).mean(dim=1)
 
-    def get_segm_blks(self, x_dict: Tensor) -> list[torch.Tensor]:
+    def get_segm_blks(self, x_dict: dict) -> list[torch.Tensor]:
         """ need to overwrite because croma has no class token. """
         return self.encoder(**{f"{self.modality}_images": x_dict['imgs']})['out_feats']
     
