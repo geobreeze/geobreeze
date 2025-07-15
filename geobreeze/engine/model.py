@@ -53,14 +53,13 @@ class EvalModelWrapper(nn.Module):
         self.norm = None
         raise NotImplementedError()
     
-    def get_blocks(self, x):
+    def get_blocks(self, x_dict):
         """ 
         Main function to extract features. Extracting blocks allows segmentation
         and multiple different mappings from blocks to a single representation. 
 
         Input: 
-            x: input tensor of size [b,c,h,w]
-            indices: list of indices of intermediate features to return
+            x_dict: dict with input tensor of size [b,c,h,w] on key 'imgs'
 
         Output: 
             list of intermediate features indexed by indices, 

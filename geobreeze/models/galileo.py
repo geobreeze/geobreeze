@@ -131,10 +131,9 @@ class Galileo(EvalModelWrapper):
 
     def get_segm_blks(self, x_dict) -> list[torch.Tensor]:
         # we extract blocks from the vit and average over the channel groups
-        x = x_dict['imgs']
-        B, C, H, W = x.shape
+        B, C, H, W = x_dict['imgs'].shape
         
-        blocks = self.get_blocks(x)
+        blocks = self.get_blocks(x_dict)
 
         patch_size = self.patch_size
         h = H // patch_size
